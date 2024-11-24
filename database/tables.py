@@ -62,7 +62,7 @@ class Package(
     def location_expression(self):
         return Location.package_id == self.id
 
-    async def get_owner(self) -> _t.Optional[TelegramUser]:
+    async def get_owner(self) -> TelegramUser:
         return await self.get_relation(
             TelegramUser, TelegramUser.id == self.owner_id, one=True
         )
@@ -91,7 +91,7 @@ class Location(
     def role_expression(self):
         return Role.location_id == self.id
 
-    async def get_package(self) -> _t.Optional[Package]:
+    async def get_package(self) -> Package:
         return await self.get_relation(Package, Package.id == self.package_id, one=True)
 
     async def get_roles(self) -> _t.Sequence["Role"]:
@@ -109,7 +109,7 @@ class Role(
 
     location: Location = _sql.Relationship(back_populates="roles")
 
-    async def get_location(self) -> _t.Optional[Location]:
+    async def get_location(self) -> Location:
         return await self.get_relation(
             Location, Location.id == self.location_id, one=True
         )

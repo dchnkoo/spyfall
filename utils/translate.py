@@ -204,24 +204,32 @@ class SavedTranslates(_p.BaseModel):
     root_dir: _t.ClassVar[Path] = ROOT_DIR
     path: _t.ClassVar[Path] = root_dir / file_name
 
+    _translates = _p.PrivateAttr()
+
     if not path.exists():
         path.touch()
 
-    translates: _t.ClassVar[dict[str, dict[str, str]]] = {}
+    text: str
 
-    cur_text: str
+    def __init__(self, **data):
+        super(SavedTranslates, self).__init__(**data)
+        self._translates = self.get_file_json
+
+    @property
+    def translates(self) -> dict[str, dict[str, str]]:
+        return self._translates
 
     @cached_property
-    def encoded_base64_text(self):
-        return hashlib.sha256(self.cur_text.encode("utf-8")).hexdigest()
-
-    @_p.field_validator("translates", mode="before", check_fields=False)
-    @classmethod
-    def validate_translates(cls, v: dict[str, dict[str, str]]):
-        with open(cls.path, "r") as f:
+    def get_file_json(self):
+        with open(self.path, "r") as f:
+            f.seek(0)
             content = f.read()
             data = content if content else "{}"
             return json.loads(data)
+
+    @cached_property
+    def encoded_base64_text(self):
+        return hashlib.sha256(self.text.encode("utf-8")).hexdigest()
 
     def save(self):
         with open(self.path, "w") as f:
@@ -279,7 +287,7 @@ class TranslateStr(str):
         if self.source_language_code == to_lang:
             return self
 
-        saved = SavedTranslates(cur_text=self.string)
+        saved = SavedTranslates(text=self.string)
 
         saved_translate = saved.get(to_lang)
         if saved_translate:

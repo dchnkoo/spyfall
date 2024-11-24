@@ -1,5 +1,6 @@
 from utils.translate import TranslateStr
 from spy.commands import private, group
+from settings import spygame
 
 
 SOMETHING_WRONG = TranslateStr("Something goes wrong, click to /start and try again.")
@@ -99,11 +100,10 @@ Number of locations: {} 📍
 SHOW_PACKAGES = TranslateStr("Show packages 📦")
 
 
-YOU_DOESNT_HAVE_ANY_PACKAGE = TranslateStr(
-    """
-    You doesn't have any packages yet.
-    """
-)
+YOU_DOESNT_HAVE_ANY = TranslateStr("You doesn't have any {some} yet.")
+
+
+YOU_DOESNT_HAVE_ANY_PACKAGE = YOU_DOESNT_HAVE_ANY.format(some="packages")
 
 
 PACKAGE_WAS_DELETED = TranslateStr("Package was deleted!")
@@ -133,12 +133,15 @@ LOCATIONS = TranslateStr("Locations 📍")
 BACK = TranslateStr("Back ↩️")
 
 
-ENTER_LOCATION_NAME = TranslateStr(
+ENTER_NAME = TranslateStr(
     """
-Enter the name for the location or click /cancel to cancel the action. 📍
-> Example: "Hospital"
+Enter the name for the {some} or click /cancel to cancel the action.
+> Example: {}
 """
 )
+
+
+ENTER_LOCATION_NAME = ENTER_NAME.format('"Hospital"', some="location")
 
 
 ENTER_LINK_ON_IMAGE_OR_SKIP = TranslateStr(
@@ -149,18 +152,24 @@ Enter the link on the image for the location or click /skip to skip this action.
 )
 
 
-FAILED_TO_ADD_LOCATION_EXIST = TranslateStr(
+FAILED_TO_ADD_EXISTS = TranslateStr(
     """
-Failed to add location. This location already exists in that package. 📍
+Failed to add {some}. This {some} already exists.
 """
 )
 
 
-FAILED_TO_ADD_LOCATION_LIMIT = TranslateStr(
+FAILED_TO_ADD_LIMIT = TranslateStr(
     """
-Failed to add location. You have reached the limit of locations. 📍
+Failed to add {some}. You have reached the limit of {some}s.
 """
 )
+
+
+FAILED_TO_ADD_LOCATION_EXIST = FAILED_TO_ADD_EXISTS.format(some="location")
+
+
+FAILED_TO_ADD_LOCATION_LIMIT = FAILED_TO_ADD_LIMIT.format(some="location")
 
 
 LOCATION_ADDED_SECCESSFULLY = ADDED_SUCCESSFULY_SOME.format(some="Location")
@@ -191,14 +200,62 @@ Enter the link on the image for the location or click /skip to skip this action.
 )
 
 
-YOU_DOES_NOT_HAVE_LOCATIONS = TranslateStr(
-    """
-You don't have any locations yet. 📍
-"""
-)
+YOU_DOES_NOT_HAVE_LOCATIONS = YOU_DOESNT_HAVE_ANY.format(some="locations")
 
 
 ROLES = TranslateStr("Roles 👥")
 
 
 ADD_ROLE = ADD_SOME.format(some="role 👤")
+
+
+DESCRIPTION_VALIDATION_ERROR = TranslateStr(
+    "Description need to be less than 300 symbols."
+)
+
+
+FAILED_TO_ADD_ROLE_LIMIT = FAILED_TO_ADD_LIMIT.format(some="role")
+
+
+FAILED_TO_ADD_ROLE_EXISTS = FAILED_TO_ADD_EXISTS.format(some="role")
+
+
+ROLE_ADDED = ADDED_SUCCESSFULY_SOME.format(some="role")
+
+
+ENTER_ROLE_NAME = ENTER_NAME.format('"Doctor"', some="role")
+
+
+ENTER_ROLE_DESCRIPTION = TranslateStr(
+    f"""
+    Enter the description for the role or /skip this action. 👤
+
+    Maximum {spygame.role_description_limit} characters.
+
+    > Example: "Heal people"
+    """
+)
+
+
+YOU_DOESNT_HAVE_ANY_ROLES = YOU_DOESNT_HAVE_ANY.format(some="roles")
+
+
+ROLES_INFO = TranslateStr(
+    """
+Location: {location.name} 📍
+
+Number of roles: {} 👤
+"""
+)
+
+
+DELETE_ROLE = DELETE_SOME.format(some="role")
+
+
+ROLE_INFO = TranslateStr(
+    """
+Role: {role.name} 👤
+
+Description: {role.description}
+"""
+)

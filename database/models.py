@@ -10,6 +10,8 @@ from spy.routers import spybot
 from caching.manager import CacheModel
 from caching.enums import CachePrefix
 
+from settings import spygame
+
 from . import enums, bases
 
 import sqlmodel as _sql
@@ -52,6 +54,12 @@ class TelegramUserModel(User, ChatModel, CacheModel[int]):
             return "en"
         return self.language_code
 
+    def __eq__(self, other: "TelegramUserModel") -> bool:
+        assert other is TelegramUserModel or issubclass(
+            other.__class__, TelegramUserModel
+        )
+        return self.id == other.id
+
     def __hash__(self) -> int:
         return hash(self.id)
 
@@ -65,8 +73,9 @@ class PackageModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
     def __hash__(self) -> int:
         return hash(self.name)
 
-    def __eq__(self, name: str) -> bool:
-        return self.name == name
+    def __eq__(self, other: "PackageModel") -> bool:
+        assert other is PackageModel or issubclass(other.__class__, PackageModel)
+        return self.name == other.name
 
 
 class LocationModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
@@ -93,6 +102,10 @@ class LocationModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
         content_type: str = res.headers.get("content-type", None)
         assert content_type is not None
         return content_type.startswith("image")
+
+    def __eq__(self, other: "LocationModel") -> bool:
+        assert other is LocationModel or issubclass(other.__class__, LocationModel)
+        return self.name == other.name
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -126,7 +139,7 @@ class RoleModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
     @_p.field_validator("description", mode="before")
     def validate_description(cls, v: str):
         if v is not None:
-            assert len(v) <= 300
+            assert len(v) <= spygame.role_description_limit
         return v
 
     @_p.field_serializer("is_spy", when_used="always")
@@ -147,6 +160,10 @@ class RoleModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
         )
         validated.is_spy = data["is_spy"]
         return validated
+
+    def __eq__(self, other: "RoleModel") -> bool:
+        assert other is RoleModel or issubclass(other.__class__, RoleModel)
+        return self.name == other.name
 
     def __hash__(self) -> int:
         return hash(self.name)

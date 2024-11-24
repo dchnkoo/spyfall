@@ -13,5 +13,7 @@ class CallbackPrefix(enum.StrEnum):
     show_location = "sl:"
     delete_location = "dl:"
 
-    show_roles = "sr:"
+    show_roles = "srs:"
     add_role = "ar:"
+    show_role = "sr:"
+    delete_role = "dr:"

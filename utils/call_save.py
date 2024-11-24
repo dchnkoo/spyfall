@@ -29,7 +29,7 @@ def call_save(
         cls = getattr(fsm, cls_str)
         msg = await cls._save(message, state, **_)
 
-        if call_after:
+        if call_after is not None and msg is not None:
             await call_after(msg)
         return
 
