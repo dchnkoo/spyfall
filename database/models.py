@@ -33,6 +33,7 @@ class TelegramUserModel(User, ChatModel, CacheModel[int]):
     model_config = model_config
 
     cache_prefix: _t.ClassVar[str] = CachePrefix.user
+    cache_live_time: _t.ClassVar[int] = 2 * 24 * 60 * 60
 
     id: int = _sql.Field(sa_type=_sql.BigInteger, primary_key=True)
 
