@@ -1,7 +1,7 @@
 from database import TelegramUser
 
 from utils.exc.assertion import Assertion, AssertionAnswer
-from utils.msg import msg_answer
+from utils.msg import extract_message
 
 from spy import texts
 
@@ -14,7 +14,7 @@ from sqlalchemy import exc
 from loguru import logger
 
 
-def create_user_or_update[F](func: F):
+def create_user_or_update(func):
     @wraps(func)
     async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kwargs):
         new_user = msg.from_user
@@ -31,7 +31,7 @@ def create_user_or_update[F](func: F):
     return error_handler(wrapper)
 
 
-def with_user[F](func: F):
+def with_user(func):
     @wraps(func)
     async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kw):
         user = msg.from_user
@@ -45,7 +45,7 @@ def with_user[F](func: F):
     return error_handler(wrapper)
 
 
-def with_user_cache[F](func: F):
+def with_user_cache(func):
     @wraps(func)
     async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kw):
         user = msg.from_user
@@ -60,7 +60,7 @@ def with_user_cache[F](func: F):
     return error_handler(wrapper)
 
 
-def error_handler[F](func: F):
+def error_handler(func):
     @wraps(func)
     async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kw):
         try:
@@ -73,6 +73,6 @@ def error_handler[F](func: F):
                 raise e
         except Exception as e:
             logger.exception(e)
-            await msg_answer(msg, texts.SOMETHING_WRONG)
+            await extract_message(msg).answer(texts.SOMETHING_WRONG)
 
     return wrapper

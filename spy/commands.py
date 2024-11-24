@@ -13,6 +13,9 @@ class PrivateCommands(Commands):
     create_package = BotCommand(
         command="create_package", description="Create your own package 📦"
     )
+    show_packages = BotCommand(
+        command="show_packages", description="List of your packages 📬"
+    )
     game_settings = BotCommand(
         command="game_settings", description="Configure the game ⚙️"
     )

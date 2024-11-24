@@ -29,11 +29,18 @@ class TelegramUser(
     packages: _t.List["Package"] = _sql.Relationship(back_populates="owner")
     settings: _t.Optional["Settings"] = _sql.Relationship(back_populates="user")
 
+    @property
+    def package_expression(self):
+        return Package.owner_id == self.id
+
     async def get_settings(self) -> _t.Optional["Settings"]:
         return await self.get_relation(Settings, Settings.user_id == self.id, one=True)
 
     async def get_packages(self) -> _t.Sequence["Package"]:
-        return await self.get_relation(Package, Package.owner_id == self.id)
+        return await self.get_relation(Package, self.package_expression)
+
+    async def number_of_packages(self) -> int:
+        return await self.count(Package, self.package_expression)
 
 
 class Package(
@@ -51,13 +58,20 @@ class Package(
     owner: TelegramUser = _sql.Relationship(back_populates="packages")
     locations: _t.List["Location"] = _sql.Relationship(back_populates="package")
 
+    @property
+    def location_expression(self):
+        return Location.package_id == self.id
+
     async def get_owner(self) -> _t.Optional[TelegramUser]:
         return await self.get_relation(
             TelegramUser, TelegramUser.id == self.owner_id, one=True
         )
 
     async def get_locations(self) -> _t.Sequence["Location"]:
-        return await self.get_relation(Location, Location.package_id == self.id)
+        return await self.get_relation(Location, self.location_expression)
+
+    async def number_of_locations(self) -> int:
+        return await self.count(Location, self.location_expression)
 
 
 class Location(
@@ -73,11 +87,18 @@ class Location(
     package: Package = _sql.Relationship(back_populates="locations")
     roles: _t.List["Role"] = _sql.Relationship(back_populates="location")
 
+    @property
+    def role_expression(self):
+        return Role.location_id == self.id
+
     async def get_package(self) -> _t.Optional[Package]:
         return await self.get_relation(Package, Package.id == self.package_id, one=True)
 
     async def get_roles(self) -> _t.Sequence["Role"]:
-        return await self.get_relation(Role, Role.location_id == self.id)
+        return await self.get_relation(Role, self.role_expression)
+
+    async def number_of_roles(self) -> int:
+        return await self.count(Role, self.role_expression)
 
 
 class Role(

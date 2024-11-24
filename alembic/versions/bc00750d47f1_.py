@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 72c0c1cd96cd
+Revision ID: bc00750d47f1
 Revises: 
-Create Date: 2024-11-23 21:40:20.653564
+Create Date: 2024-11-24 17:49:20.288775
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlmodel.sql.sqltypes
 
 
 # revision identifiers, used by Alembic.
-revision: str = '72c0c1cd96cd'
+revision: str = 'bc00750d47f1'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -53,7 +53,7 @@ def upgrade() -> None:
     op.create_table('location',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('image_url', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('image_url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('created_date', sa.DateTime(timezone=True), nullable=False),
     sa.Column('updated_date', sa.DateTime(timezone=True), nullable=True),
     sa.Column('package_id', sa.Uuid(), nullable=False),

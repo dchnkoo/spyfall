@@ -19,10 +19,11 @@ class TableManager[T: _p.BaseModel, _K: (int, "uuid.UUID")]:
     @classmethod
     @async_session_manager(create=True)
     async def add(
-        cls, d: T | dict, *, session: _t.Optional["AsyncSession"] = None
+        cls, d: T | dict, *, session: _t.Optional["AsyncSession"] = None, **kw
     ) -> _t.Self:
         assert session is not None
         data = d if isinstance(d, dict) else d.model_dump()
+        data = data | kw
         try:
             instance = cls(**data)
             session.add(instance)
@@ -59,8 +60,19 @@ class TableManager[T: _p.BaseModel, _K: (int, "uuid.UUID")]:
     @async_session_manager(create=True)
     async def remove(self, *, session: _t.Optional["AsyncSession"] = None) -> None:
         assert session is not None
-        await session.delete(self)
-        await session.flush()
+        query = _sql.delete(self.__class__).where(self.__class__.id == self.id)
+        await session.execute(query)
+        await session.commit()
+
+    @classmethod
+    @async_session_manager(create=True)
+    async def remove_by_id(
+        cls, id: _K, *, session: _t.Optional["AsyncSession"] = None
+    ) -> None:
+        assert session is not None
+        query = _sql.delete(cls).where(cls.id == id)
+        await session.execute(query)
+        await session.commit()
 
     @async_session_manager
     async def get_relation[
@@ -83,3 +95,12 @@ class TableManager[T: _p.BaseModel, _K: (int, "uuid.UUID")]:
         elif one and data:
             return data[0]
         return data
+
+    @async_session_manager
+    async def count[
+        _R
+    ](
+        self, relation_table: _R, *expr, session: _t.Optional["AsyncSession"] = None
+    ) -> int:
+        query = _sql.select(_sql.func.count()).select_from(relation_table).where(*expr)
+        return (await session.execute(query)).scalar_one()

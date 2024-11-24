@@ -1,5 +1,3 @@
-from gpytranslate import Translator
-
 import enum
 import re
 
@@ -191,9 +189,66 @@ class LanguageCode(enum.StrEnum):
     ZU = "zu"  # Zulu
 
 
-from spy.commands import private, group
 from functools import cached_property
-from async_lru import alru_cache
+from settings import ROOT_DIR
+from pathlib import Path
+
+import pydantic as _p
+import typing as _t
+import hashlib
+import json
+
+
+class SavedTranslates(_p.BaseModel):
+    file_name: _t.ClassVar[str] = "saved_translates.json"
+    root_dir: _t.ClassVar[Path] = ROOT_DIR
+    path: _t.ClassVar[Path] = root_dir / file_name
+
+    if not path.exists():
+        path.touch()
+
+    translates: _t.ClassVar[dict[str, dict[str, str]]] = {}
+
+    cur_text: str
+
+    @cached_property
+    def encoded_base64_text(self):
+        return hashlib.sha256(self.cur_text.encode("utf-8")).hexdigest()
+
+    @_p.field_validator("translates", mode="before", check_fields=False)
+    @classmethod
+    def validate_translates(cls, v: dict[str, dict[str, str]]):
+        with open(cls.path, "r") as f:
+            content = f.read()
+            data = content if content else "{}"
+            return json.loads(data)
+
+    def save(self):
+        with open(self.path, "w") as f:
+            json.dump(self.translates, f)
+
+    def get(self, language_code: LanguageCode):
+        translates = self.translates.get(self.encoded_base64_text, None)
+        if not translates:
+            return
+        return translates.get(language_code)
+
+    def get_translates(self):
+        translates = self.translates.get(self.encoded_base64_text, None)
+        if translates is None:
+            self.translates[self.encoded_base64_text] = {}
+            translates = self.translates.get(self.encoded_base64_text)
+        assert translates is not None
+        return translates
+
+    def set(self, language_code: LanguageCode, text: str):
+        translates = self.get_translates()
+        translates[language_code] = text
+        self.save()
+
+
+from spy.commands import private, group
+from aiogtrans import Translator
 
 
 t = Translator()
@@ -216,12 +271,20 @@ class TranslateStr(str):
 
     @cached_property
     def to_translate(self):
-        if (length := len(self)) > (step := 3000):
+        if (length := len(self)) > (step := 15_000):
             return [self[i : i + step] for i in range(0, length, step)]
         return self
 
-    @alru_cache(maxsize=128)
     async def __call__(self, to_lang: LanguageCode, *, exclude: tuple[str] = ()):
+        if self.source_language_code == to_lang:
+            return self
+
+        saved = SavedTranslates(cur_text=self.string)
+
+        saved_translate = saved.get(to_lang)
+        if saved_translate:
+            return saved_translate
+
         to_translate = self
 
         exclude = list(exclude) + self.formated_parts + self.bot_commands
@@ -231,8 +294,8 @@ class TranslateStr(str):
 
         translated = await t.translate(
             to_translate.to_translate,
-            self.source_language_code,
             to_lang,
+            self.source_language_code,
         )
 
         if isinstance(translated, list):
@@ -242,6 +305,8 @@ class TranslateStr(str):
 
         for index, text in enumerate(exclude):
             txt = txt.replace(f"__{index}__", text)
+
+        saved.set(to_lang, txt)
         return TranslateStr(txt, source_language_code=to_lang)
 
     def _new(self, text: str):

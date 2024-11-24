@@ -72,13 +72,14 @@ class PackageModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
 class LocationModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
     model_config = model_config
 
-    image_url: str
+    image_url: _t.Optional[str] = None
 
     @_p.field_validator("image_url", mode="before")
     @classmethod
     def validate_image_url(cls, v: str):
-        parsed_url = urlparse(v)
-        assert all((parsed_url.scheme, parsed_url.netloc, parsed_url.path))
+        if v is not None:
+            parsed_url = urlparse(v)
+            assert all((parsed_url.scheme, parsed_url.netloc, parsed_url.path))
         return v
 
     @classmethod
@@ -87,7 +88,7 @@ class LocationModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
 
         async with async_request_session() as client:
             res = await client.get(url)
-            assert res.is_success
+            assert res.status_code == 200
 
         content_type: str = res.headers.get("content-type", None)
         assert content_type is not None

@@ -1,5 +1,5 @@
+from utils.msg import extract_message
 from abc import ABC, abstractmethod
-from utils.msg import msg_answer
 
 from aiogram import types
 
@@ -25,7 +25,7 @@ class AssertionAnswer(Assertion):
         self.msg = msg
 
     async def send(self, msg: types.Message | types.CallbackQuery, *args, **kwargs):
-        await msg_answer(msg, self.msg)
+        await extract_message(msg).answer(self.msg)
 
     def __str__(self) -> str:
         return self.msg
