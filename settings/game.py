@@ -11,3 +11,9 @@ class SpyGame(BaseSettings):
     locations_limit: int = 24
     roles_limit: int = 11
     role_description_limit: int = 300
+
+    min_round_time: int = 3
+    max_round_time: int = 10
+
+    min_rounds: int = 3
+    max_rounds: int = 10

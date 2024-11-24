@@ -146,6 +146,13 @@ class Settings(
     user: TelegramUser = _sql.Relationship(back_populates="settings")
     package: _t.Optional[Package] = _sql.Relationship()
 
+    def get_location_roles(self, location_id: str) -> list[str]:
+        arr = self.use_roles_id.get(location_id, None)
+        if arr is None:
+            arr = []
+            self.use_roles_id[location_id] = arr
+        return arr
+
     async def get_user(self) -> _t.Optional[TelegramUser]:
         return await self.get_relation(
             TelegramUser, TelegramUser.id == self.user_id, one=True

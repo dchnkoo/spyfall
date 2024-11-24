@@ -32,7 +32,7 @@ def create_new_query(
     exctracted = extract_message(msg)
 
     return types.CallbackQuery(
-        id=random_str_id(),
+        id=(random_str_id() if not "id" in kw else kw.pop("id")),
         from_user=(from_user or msg.from_user),
         chat_instance=str(exctracted.chat.id),
         message=exctracted,
