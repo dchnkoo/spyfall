@@ -23,7 +23,7 @@ async def cancel(msg: types.Message, user: "TelegramUser", state: fsm.FSMContext
         return
 
     await state.clear()
-    await user.send_message(texts.CANCELED)
+    await user.send_message(await texts.CANCELED(user.language))
 
 
 @private_only_msg.message(

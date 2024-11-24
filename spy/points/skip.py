@@ -57,7 +57,7 @@ async def skip(
         await state.clear()
         txt = texts.CANCELED_ACTION
 
-    await message.answer(txt)
+    await message.answer(await txt(user.language))
 
     if next_step_txt is not None:
-        await message.answer(next_step_txt)
+        await message.answer(await next_step_txt(user.language))

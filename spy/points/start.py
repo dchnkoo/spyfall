@@ -26,12 +26,13 @@ async def start_command(msg: types.Message, bot: Bot, user: "TelegramUser", **_)
     keyboard = InlineKeyboardBuilder()
     keyboard.add(
         types.InlineKeyboardButton(
-            text=texts.ADD_ME_TO_GROUP,
+            text=await texts.ADD_ME_TO_GROUP(user.language),
             url=link,
         )
     )
 
     await bot.set_my_commands(list(private), language_code=user.language)
     await user.send_message(
-        texts.START_MSG.format(user=user), reply_markup=keyboard.as_markup()
+        (await texts.START_MSG(user.language)).format(user=user),
+        reply_markup=keyboard.as_markup(),
     )

@@ -30,7 +30,7 @@ async def create_package(
     await state.set_state(fsm.PackageFSM.name)
 
     await msg.delete()
-    await user.send_message(texts.NAME_FOR_PACKAGE)
+    await user.send_message(await texts.NAME_FOR_PACKAGE(user.language))
 
 
 @no_skip(private_only_msg, filters.StateFilter(fsm.PackageFSM.name))
@@ -45,9 +45,11 @@ async def handle_package_name(
     packages = await user.get_packages()
 
     if (name := msg.text) in set(packages):
-        await user.send_message(texts.PACKAGE_ALREADY_EXISTS.format(name=name))
+        await user.send_message(
+            (await texts.PACKAGE_ALREADY_EXISTS(user.language)).format(name=name)
+        )
         return
 
     await Package.add({"name": name, "owner_id": user.id})
     await state.clear()
-    await user.send_message(texts.PACKAGE_CREATED)
+    await user.send_message(await texts.PACKAGE_CREATED(user.language))

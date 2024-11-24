@@ -1,13 +1,16 @@
+from utils.translate import TranslateStr
 from spy.commands import private, group
 
 
-SOMETHING_WRONG = "Something goes wrong, try again."
+SOMETHING_WRONG = TranslateStr("Something goes wrong, try again.")
 
 
-SOMETHING_WRONG_TRY_START = "Something goes wrong, use /start command and try again."
+SOMETHING_WRONG_TRY_START = TranslateStr(
+    "Something goes wrong, use /start command and try again."
+)
 
 
-START_MSG = (
+START_MSG = TranslateStr(
     """
 Hello, {user.full_name}! 🎉
 
@@ -43,31 +46,33 @@ Ready for an adventure? Let’s find the spy together! 😏
 )
 
 
-ADD_ME_TO_GROUP = "Add me to the group 🕵️‍♂️"
+ADD_ME_TO_GROUP = TranslateStr("Add me to the group 🕵️‍♂️")
 
 
-SKIPED_ACTION = "Action was skipped."
+SKIPED_ACTION = TranslateStr("Action was skipped.")
 
 
-CANCELED_ACTION = "Action was canceled."
+CANCELED_ACTION = TranslateStr("Action was canceled.")
 
 
-YOU_CANNOT_SKIP_THAT_ACTION = "You cannot skip that action."
+YOU_CANNOT_SKIP_THAT_ACTION = TranslateStr("You cannot skip that action.")
 
 
-YOU_CANNOT_CANCEL_THAT_ACTION = "You cannot cancel that action."
+YOU_CANNOT_CANCEL_THAT_ACTION = TranslateStr("You cannot cancel that action.")
 
 
-NAME_FOR_PACKAGE = f"""
+NAME_FOR_PACKAGE = TranslateStr(
+    f"""
 Enter the name for the package or click /{private.cancel.command} to cancel the action. 📦
 > Example: "My first package"
 """
+)
 
 
-CANCELED = "Canceled."
+CANCELED = TranslateStr("Canceled.")
 
 
-PACKAGE_ALREADY_EXISTS = "Package with {name} name already exists."
+PACKAGE_ALREADY_EXISTS = TranslateStr("Package with {name} name already exists.")
 
 
-PACKAGE_CREATED = "Package created!"
+PACKAGE_CREATED = TranslateStr("Package created!")

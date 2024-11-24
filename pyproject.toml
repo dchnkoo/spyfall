@@ -13,6 +13,8 @@ pydantic-settings = "^2.6.1"
 loguru = "^0.7.2"
 alembic = "^1.14.0"
 redis = "^5.2.0"
+gpytranslate = "^1.5.1"
+async-lru = "^2.0.4"
 
 
 [build-system]
