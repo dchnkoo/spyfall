@@ -26,9 +26,6 @@ class TelegramUser(
     table=True,
 ):
 
-    packages: _t.List["Package"] = _sql.Relationship(back_populates="owner")
-    settings: _t.Optional["Settings"] = _sql.Relationship(back_populates="user")
-
     @property
     def package_expression(self):
         return Package.owner_id == self.id
@@ -38,6 +35,9 @@ class TelegramUser(
 
     async def get_packages(self) -> _t.Sequence["Package"]:
         return await self.get_relation(Package, self.package_expression)
+
+    async def get_random_package(self) -> _t.Optional["Package"]:
+        return await self.get_random(Package, self.package_expression)
 
     async def number_of_packages(self) -> int:
         return await self.count(Package, self.package_expression)
@@ -55,9 +55,6 @@ class Package(
         foreign_key="telegramuser.id", ondelete="CASCADE", sa_type=_sql.BigInteger
     )
 
-    owner: TelegramUser = _sql.Relationship(back_populates="packages")
-    locations: _t.List["Location"] = _sql.Relationship(back_populates="package")
-
     @property
     def location_expression(self):
         return Location.package_id == self.id
@@ -66,6 +63,9 @@ class Package(
         return await self.get_relation(
             TelegramUser, TelegramUser.id == self.owner_id, one=True
         )
+
+    async def get_random_location(self) -> _t.Optional["Location"]:
+        return await self.get_random(Location, self.location_expression)
 
     async def get_locations(self) -> _t.Sequence["Location"]:
         return await self.get_relation(Location, self.location_expression)
@@ -83,9 +83,6 @@ class Location(
 ):
 
     package_id: uuid.UUID = _sql.Field(foreign_key="package.id", ondelete="CASCADE")
-
-    package: Package = _sql.Relationship(back_populates="locations")
-    roles: _t.List["Role"] = _sql.Relationship(back_populates="location")
 
     @property
     def role_expression(self):
@@ -106,8 +103,6 @@ class Role(
 ):
 
     location_id: uuid.UUID = _sql.Field(foreign_key="location.id", ondelete="CASCADE")
-
-    location: Location = _sql.Relationship(back_populates="roles")
 
     async def get_location(self) -> Location:
         return await self.get_relation(
@@ -143,8 +138,17 @@ class Settings(
     )
     rounds: int = spygame.default_rounds
 
-    user: TelegramUser = _sql.Relationship(back_populates="settings")
-    package: _t.Optional[Package] = _sql.Relationship()
+    def reset_locations_and_roles(self):
+        self.use_locations_id = []
+        self.use_roles_id = {}
+
+    def remove_game_package(self):
+        self.package_id = None
+        self.reset_locations_and_roles()
+
+    def set_new_package(self, package_id: uuid.UUID):
+        self.package_id = package_id
+        self.reset_locations_and_roles()
 
     def get_location_roles(self, location_id: str) -> list[str]:
         arr = self.use_roles_id.get(location_id, None)

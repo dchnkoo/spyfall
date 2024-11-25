@@ -17,3 +17,5 @@ class SpyGame(BaseSettings):
 
     min_rounds: int = 3
     max_rounds: int = 10
+
+    max_players_in_room: int = 12

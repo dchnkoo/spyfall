@@ -104,3 +104,15 @@ class TableManager[T: _p.BaseModel, _K: (int, "uuid.UUID")]:
     ) -> int:
         query = _sql.select(_sql.func.count()).select_from(relation_table).where(*expr)
         return (await session.execute(query)).scalar_one()
+
+    @async_session_manager
+    async def get_random[
+        _R
+    ](
+        self, table: _R, *expr, session: _t.Optional["AsyncSession"] = None
+    ) -> _t.Optional[_R]:
+        assert session is not None
+        result = await session.execute(
+            _sql.select(table).where(*expr).order_by(_sql.func.random()).limit(1)
+        )
+        return result.scalar_one_or_none()

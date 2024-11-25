@@ -8,10 +8,69 @@ from aiogram.client.default import Default
 from aiogram.enums import ChatAction
 from aiogram import Bot, types
 
+import pydantic as _p
 import typing as _t
+import json
 
 
-class ChatModel(ABC):
+def save_sended[
+    F: _t.Callable[[F], _t.Coroutine[_t.Any, _t.Any, types.Message]]
+](func: F) -> F:
+    async def wrapper(self: "ChatModel", *args, **kwargs):
+        msg = await func(self, *args, **kwargs)
+        if self.save_msg_id:
+            self.saved_msgs_ids.append(msg.message_id)
+        return msg
+
+    return wrapper
+
+
+class ChatModel(ABC, _p.BaseModel):
+
+    save_msg_id: _t.ClassVar[bool] = False
+    _saved_msgs_ids: list[int | str] = _p.PrivateAttr(default_factory=list)
+
+    @_p.computed_field
+    @property
+    def saved_msgs_ids(self) -> list[int | str]:
+        return self._saved_msgs_ids
+
+    @saved_msgs_ids.setter
+    def saved_msgs_ids(self, value: list[int | str]):
+        assert isinstance(value, list)
+        self._saved_msgs_ids = value
+
+    @classmethod
+    def model_validate_json(
+        cls,
+        json_data: str | bytes | bytearray,
+        *,
+        strict: bool | None = None,
+        context: _t.Any | None = None,
+    ):
+        data = json.loads(json_data)
+        validated = cls.__pydantic_validator__.validate_python(
+            data, strict=strict, context=context
+        )
+        validated.saved_msgs_ids = data["saved_msgs_ids"]
+        return validated
+
+    @property
+    def get_last_sended_msg(self):
+        try:
+            return self.saved_msgs_ids.pop()
+        except IndexError:
+            return
+
+    async def delete_last_sended_msg(self):
+        msg_id = self.get_last_sended_msg
+        if msg_id is None:
+            return
+        await self.delete_message(message_id=msg_id)
+
+    async def delete_all_sended_msgs(self):
+        while self.saved_msgs_ids:
+            await self.delete_last_sended_msg()
 
     @property
     @abstractmethod
@@ -106,6 +165,7 @@ class ChatModel(ABC):
             chat_id=self.chat_id,
         )
 
+    @save_sended
     async def send_message(
         self,
         text: str,
@@ -137,7 +197,7 @@ class ChatModel(ABC):
         ),
         reply_to_message_id: _t.Optional[int] = None,
         request_timeout: _t.Optional[int] = None,
-        **action_kw
+        **action_kw,
     ) -> types.Message:
         async with self.chat_action(**action_kw):
             return await self.__bot__.send_message(
@@ -160,6 +220,7 @@ class ChatModel(ABC):
                 request_timeout=request_timeout,
             )
 
+    @save_sended
     async def send_photo(
         self,
         photo: _t.Union[types.InputFile, str],
@@ -190,7 +251,7 @@ class ChatModel(ABC):
         allow_sending_without_reply: _t.Optional[bool] = None,
         reply_to_message_id: _t.Optional[int] = None,
         request_timeout: _t.Optional[int] = None,
-        **action_kw
+        **action_kw,
     ) -> types.Message:
         async with self.chat_action(ChatAction.UPLOAD_PHOTO, **action_kw):
             return await self.__bot__.send_photo(

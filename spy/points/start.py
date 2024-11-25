@@ -37,6 +37,12 @@ async def start_command(msg: types.Message, bot: Bot, user: "TelegramUser", **_)
             callback_data=CallbackPrefix.show_packages,
         )
     )
+    keyboard.add(
+        types.InlineKeyboardButton(
+            text=await texts.GAME_SETTINGS(user.language),
+            callback_data=CallbackPrefix.game_settings,
+        )
+    )
     keyboard.adjust(1, 2)
 
     await bot.set_my_commands(list(private), language_code=user.language)

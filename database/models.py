@@ -7,8 +7,7 @@ from utils.chat.model import ChatModel
 
 from spy.routers import spybot
 
-from caching.manager import CacheModel
-from caching.enums import CachePrefix
+from caching import CacheModel, CachePrefix
 
 from settings import spygame
 
@@ -142,10 +141,6 @@ class RoleModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
         if v is not None:
             assert len(v) <= spygame.role_description_limit
         return v
-
-    @_p.field_serializer("is_spy", when_used="always")
-    def serialize_is_spy(self, is_spy: bool):
-        return is_spy
 
     @classmethod
     def model_validate_json(

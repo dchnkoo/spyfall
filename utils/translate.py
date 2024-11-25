@@ -337,3 +337,6 @@ class TranslateStr(str):
     @cached_property
     def formated_parts(self):
         return re.findall(r"(\{.*?\})", self)
+
+    def add(self, text: str):
+        return self._new(self.string + text)

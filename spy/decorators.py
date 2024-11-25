@@ -21,7 +21,9 @@ def create_user_or_update(func):
     async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kwargs):
         new_user = msg.from_user
         try:
-            assert new_user is not None, AssertionAnswer(texts.SOMETHING_WRONG)
+            assert new_user is not None, AssertionAnswer(
+                texts.SOMETHING_WRONG_TRY_START
+            )
             user = await TelegramUser.add(new_user)
         except exc.IntegrityError:
             user = TelegramUser.model_validate(new_user)
@@ -37,7 +39,7 @@ def with_user(func):
     @wraps(func)
     async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kw):
         user = msg.from_user
-        assert user is not None, AssertionAnswer(texts.SOMETHING_WRONG)
+        assert user is not None, AssertionAnswer(texts.SOMETHING_WRONG_TRY_START)
 
         user = await TelegramUser.load(user.id)
         assert user is not None, AssertionAnswer(texts.SOMETHING_WRONG_TRY_START)
@@ -51,7 +53,7 @@ def with_user_cache(func):
     @wraps(func)
     async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kw):
         user = msg.from_user
-        assert user is not None, AssertionAnswer(texts.SOMETHING_WRONG)
+        assert user is not None, AssertionAnswer(texts.SOMETHING_WRONG_TRY_START)
         try:
             user = await TelegramUser.load_cached(user.id)
         except AssertionError:
@@ -83,6 +85,6 @@ def error_handler(func):
             )
         except Exception as e:
             logger.exception(e)
-            await extract_message(msg).answer(texts.SOMETHING_WRONG)
+            await extract_message(msg).answer(texts.SOMETHING_WRONG_TRY_START)
 
     return wrapper

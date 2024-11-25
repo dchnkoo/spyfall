@@ -303,9 +303,10 @@ async def choose_game_package(callback: types.CallbackQuery, user: "TelegramUser
 
     settings = await user.get_settings()
     if settings.package_id == package_id:
-        package_id = None
+        settings.remove_game_package()
+    else:
+        settings.set_new_package(package_id)
 
-    settings.package_id = package_id
     await settings.save()
 
     await select_game_package(callback)

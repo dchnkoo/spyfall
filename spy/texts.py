@@ -3,7 +3,7 @@ from spy.commands import private, group
 from settings import spygame
 
 
-SOMETHING_WRONG = TranslateStr("Something goes wrong, click to /start and try again.")
+SOMETHING_WRONG = TranslateStr("Something goes wrong.")
 
 
 SOMETHING_WRONG_TRY_START = TranslateStr(
@@ -248,6 +248,11 @@ Enter the link on the image for the location or click /skip to skip this action.
 YOU_DOES_NOT_HAVE_LOCATIONS = YOU_DOESNT_HAVE_ANY.format(some="locations")
 
 
+YOU_DOES_NOT_HAVE_LOCATIONS_IN_THAT_PACKAGE = YOU_DOES_NOT_HAVE_LOCATIONS.add(
+    " In package {}."
+)
+
+
 ROLES = TranslateStr("Roles 👥")
 
 
@@ -428,5 +433,67 @@ SPIES_CONFIGURE_EXPLAIN = TranslateStr(
     If you choose the option "Two spies in game", the game will be started with two spies and if you have more than 8 players.
 
     If you choose the option "Spies know each other", the spies will know each other in that game in opposite situation bot will not send message to spies about them.
+    """
+)
+
+
+NOTIFY_USER_ABOUT_ROLE = TranslateStr(
+    """
+Your role: {role.name} 👤
+Role description: {role.description}
+"""
+)
+
+
+NOTIFY_ABOUT_LOCATION = TranslateStr("Location: {location.name}")
+
+
+YOU_ALREADY_IN_GAME = TranslateStr("You already in game.")
+
+
+SELECTED_ROLES_LESS_THAN_PLAYERS = TranslateStr(
+    "Selected roles less than players. Cannot start the game."
+)
+
+
+GAME_ROOM_ALREADY_FULL = TranslateStr("Game room already full.")
+
+
+THE_SECOND_SPY_IS = TranslateStr(
+    """
+    The second spy is {player.markdown_user_link} 🕵️‍♂️
+    """
+)
+
+
+SELECTED_LOCATIONS_NEED_TO_BE_MORE_THAN_ROUNDS = TranslateStr(
+    """
+Game locations which you selected need to be more than rounds!
+
+Number of locations: {} 📍
+Rounds: {} 🎯
+"""
+)
+
+
+LOCATIONS_NEED_TO_BE_MORE_THAN_ROUNDS = TranslateStr(
+    """
+Locations in package not enough to start. Locations need to be more than rounds.
+
+Number of locations: {} 📍
+Rounds: {} 🎯
+"""
+)
+
+
+BEGIN_ROUND = TranslateStr("Begin of {} round!")
+
+
+TO_END_OF_ROUND_REMAINS = TranslateStr("The end of the round remains {} seconds")
+
+
+GAME_ENDED = TranslateStr(
+    """
+    The game was ended. 🕵️‍♂️
     """
 )

@@ -930,6 +930,21 @@ email = ["email-validator (>=2.0.0)"]
 timezone = ["tzdata"]
 
 [[package]]
+name = "pydantic-collections"
+version = "0.6.0"
+description = "Collections of pydantic models"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pydantic_collections-0.6.0-py3-none-any.whl", hash = "sha256:ec559722abf6a0f80e6f00b3d28f0f39c0ed5feb1641166230eb75e9da880162"},
+    {file = "pydantic_collections-0.6.0.tar.gz", hash = "sha256:c34d3fd1df5600b315cdecdd8e74eacd4c8c607b7e3f2c9392b2a15850a4ef9e"},
+]
+
+[package.dependencies]
+pydantic = ">=1.8.2,<3.0"
+typing-extensions = ">=4.7.1"
+
+[[package]]
 name = "pydantic-core"
 version = "2.23.4"
 description = "Core functionality for Pydantic validation and serialization"
@@ -1353,4 +1368,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "e72794ac9459a2bb398f22aea082b4867fb1cc2ba2a1881a51226f12cb47dcb4"
+content-hash = "70284f2b7801ce17bf4b5e16dde48fab5549829d46d813bf04a27b80c9236086"
