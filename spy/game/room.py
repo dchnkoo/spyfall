@@ -179,6 +179,14 @@ class GameRoom(CacheModel[CHAT_ID], ChatModel):
     def __bot__(self):
         return spybot
 
+    async def exists(self) -> bool:
+        try:
+            await self.load_cached(self.cache_identity)
+        except AssertionError:
+            return False
+        else:
+            return True
+
     async def set_status(self, s: GameStatus) -> None:
         self.status = s
         await self.save_in_cache()
