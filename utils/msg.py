@@ -48,3 +48,7 @@ async def handle_content_type_text(msg: types.CallbackQuery | types.Message):
         await exctracted.delete()
         return exctracted.answer
     return exctracted.edit_text
+
+
+def extract_chat_id(msg: types.Message | types.CallbackQuery):
+    return extract_message(msg).chat.id

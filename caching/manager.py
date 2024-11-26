@@ -62,7 +62,8 @@ class CacheModel[_K](ABC, _p.BaseModel):
 
     async def delete_cache(self) -> None:
         async with self.cache_controller() as client:
-            await client.delete(self.cache_key)
+            res = await client.delete(self.cache_key)
+            assert res == 1, "Object wasn't deleted."
 
     @classmethod
     async def delete_cache_by_identity(cls, cache_identity: _K) -> None:

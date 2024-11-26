@@ -29,6 +29,8 @@ class PrivateCommands(Commands):
 
 class GroupCommands(Commands):
     play = BotCommand(command="play", description="Start the recruitment to game! 🎲")
+    join = BotCommand(command="join", description="Join to the game room. 👥")
+    end = BotCommand(command="end", description="End the game. ⛔️")
 
 
 private = PrivateCommands()

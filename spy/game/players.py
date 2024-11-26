@@ -26,14 +26,14 @@ type room_id = int | str
 
 
 def role_check(func):
-    async def wrapper(self: Player, *args, **kwargs):
+    async def wrapper(self: "Player", *args, **kwargs):
         assert self.role is not None
         return await func(self, *args, **kwargs)
 
     return wrapper
 
 
-class Player(TelegramUserModel, CacheModel, ChatModel):
+class Player(TelegramUserModel):
     db: _t.ClassVar[int] = redis.game_db
     cache_prefix: _t.ClassVar[str] = CachePrefix.in_game
     save_msg: _t.ClassVar[bool] = True
@@ -97,10 +97,10 @@ class PlayersCollection(BaseCollectionModel[Player]):
         assert __object is TelegramUserModel or issubclass(
             __object.__class__, TelegramUserModel
         )
-        assert not self.get(__object.id), AssertionAnswer(
+        assert not self.in_game.get(__object.id), AssertionAnswer(
             texts.YOU_ALREADY_IN_GAME, translate=__object.language
         )
-        assert len(self) < spygame.max_players_in_room, AssertionAnswer(
+        assert len(self.in_game) < spygame.max_players_in_room, AssertionAnswer(
             texts.GAME_ROOM_ALREADY_FULL, translate=__object.language
         )
 

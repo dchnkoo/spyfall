@@ -9,7 +9,7 @@ from spy.routers import spybot
 
 from caching import CacheModel, CachePrefix
 
-from settings import spygame
+from settings import spygame, redis
 
 from . import enums, bases
 
@@ -31,6 +31,7 @@ model_config = _p.ConfigDict(
 class TelegramUserModel(User, ChatModel, CacheModel[int]):
     model_config = model_config
 
+    db: _t.ClassVar[int] = redis.users_db
     cache_prefix: _t.ClassVar[str] = CachePrefix.user
     cache_live_time: _t.ClassVar[int] = 2 * 24 * 60 * 60
 

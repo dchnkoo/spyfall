@@ -11,6 +11,17 @@ SOMETHING_WRONG_TRY_START = TranslateStr(
 )
 
 
+FIX = TranslateStr("Fix 🔧")
+
+
+COMMAND_ONLY_FOR_ADMINS = TranslateStr("This command only for admins.")
+
+
+YOU_NEED_TO_GO_TO_THE_BOT = TranslateStr(
+    "Something goes wrong, click on button below and try again."
+)
+
+
 ADDED_SUCCESSFULY_SOME = TranslateStr("{some} added successfully!")
 
 
@@ -497,3 +508,93 @@ GAME_ENDED = TranslateStr(
     The game was ended. 🕵️‍♂️
     """
 )
+
+
+RECRUITMENT_MESSAGE = TranslateStr(
+    r"""
+🎲 *The game is starting\!* 🎲
+We are now recruiting players to join the game\. You have *1 minute* to join\!
+
+🔹 To join the game, click the button below or type `/join`\.
+🔹 To leave the game, use `/leave`\.
+
+📢 Invite your friends — the more players, the more fun\!
+⌛ *The timer is ticking\.\.\. The game will begin in 1 minute\!*
+"""
+)
+
+
+GAME_STARTED = TranslateStr(
+    r"""
+🔥 *The game has begun!* 🔥
+
+🔍 *Here’s how it works:*
+1. Each player has been assigned a role:
+   - One or two of you is the *Spy*, who doesn’t know the location.
+   - The rest of you know the location and have specific roles to play\.
+
+2. *The players’ goal:* Identify the Spy by asking clever questions\.
+   - Questions should help uncover the Spy without revealing too much about the location\.
+
+3. *The Spy’s goal:* Figure out the location or avoid suspicion until the round ends\.
+
+4. At the end of the round, there will be a *voting phase*, where everyone votes for who they believe the Spy is\.
+
+5. *Optional Early Voting:* At any moment during the game, if a player is confident about who the Spy is, they can initiate *early voting* using the `/vote` command in [chat]({link}) with me\.
+
+⌛ *Round duration:* {} minutes\.
+🎲 *Game number of rounds:* {} rounds\.
+
+🎭 Let the game begin\! The current player’s turn will be announced automatically\.
+"""
+)
+
+
+JOIN_TO_THE_GAME = TranslateStr("Join to the game! 🕵️‍♂️")
+
+
+RECRUITMENT_WILL_END = TranslateStr("Recruitment will end in {} seconds..")
+
+
+DISPLAY_PLAYERS = TranslateStr("*In game:*\n\n{}\n\n*Total:* {}")
+
+
+GREETINGS_MSG_IN_GROUP = TranslateStr(
+    """
+**🤖 Hello, everyone! I'm the Spyfall Game Master! 🕵️‍♂️**
+
+Thank you for adding me to your group! I'm here to bring the Spyfall experience to life 🎉. Here's what you need to know:
+
+---
+
+🛠 **About Me:**
+- I help you play **Spyfall**, a thrilling game of mystery and deduction.
+- I'll manage roles, assign secret locations, and keep track of rounds.
+
+~~---~~
+
+🔑 **Permissions Required:**
+To function properly, I need **Admin Rights** in this group. Please ensure I have the following permissions:
+1️⃣ **Pin messages** (for game announcements).
+2️⃣ **Delete messages** (to remove unnecessary clutter).
+3️⃣ **Invite users via links** (to assist with game management).
+
+Without these permissions, I might not be able to run the game smoothly.
+
+~~---~~
+
+🎮 **How to Start the Game:**
+- Use the `/play` command to initiate a new game.
+- I'll handle everything, from assigning roles to managing gameplay.
+
+🕹 Ready to play? Grant me admin rights and type `/play` to begin!
+
+~~---~~
+
+Let's get the game rolling and find out who the spy is! 🕵️‍♀️
+"""
+)
+
+THIS_ROOM_DOESNT_EXISTS = TranslateStr("That room doesn't exists already.")
+
+YOU_JOINED_TO_THE_GAME = TranslateStr("You joined to the [game]({})")

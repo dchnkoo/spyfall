@@ -256,7 +256,7 @@ class SavedTranslates(_p.BaseModel):
 
 
 from spy.commands import private, group
-from aiogtrans import Translator
+from gpytranslate import Translator
 
 
 t = Translator()
@@ -302,8 +302,8 @@ class TranslateStr(str):
 
         translated = await t.translate(
             to_translate.to_translate,
-            to_lang,
             self.source_language_code,
+            to_lang,
         )
 
         if isinstance(translated, list):

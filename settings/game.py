@@ -19,3 +19,6 @@ class SpyGame(BaseSettings):
     max_rounds: int = 10
 
     max_players_in_room: int = 12
+
+    recruitment_time: int = 60
+    recruitment_edit_interval: int = 5

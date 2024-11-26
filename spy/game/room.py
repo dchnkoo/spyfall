@@ -7,42 +7,41 @@ from caching import CachePrefix, CacheModel
 from utils.exc.assertion import AssertionAnswer
 from utils.translate import LanguageCode
 from utils.chat.model import ChatModel
+from utils.schedule import call_later
 from utils.waiter import wait
+from utils.exc import game
 
-from functools import cached_property, partial
+from contextlib import asynccontextmanager
+
+from functools import wraps
 
 from spy.routers import spybot
 from spy import texts
 
-from settings import redis
+from settings import redis, spygame
 
-from aiogram import enums
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.utils.deep_linking import create_start_link
+from aiogram import enums, types, exceptions
 
 import datetime as _date
 import pydantic as _p
 import typing as _t
+import asyncio
 import random
 import enum
 
 
-def check_field_is_not_none[F](func: F, *, field: str, msg: _t.Optional[str] = None):
-    async def wrapper(self: GameRoom, *args, **kwargs):
-        assert getattr(self, field) is not None, msg or ""
-        return await func(self, *args, **kwargs)
+def check_field_is_not_none(field: str, msg: _t.Optional[str] = None):
+    def decorator[F](func: F) -> F:
+        @wraps(func)
+        async def wrapper(self: "GameRoom", *args, **kwargs):
+            assert getattr(self, field) is not None, msg or ""
+            return await func(self, *args, **kwargs)
 
-    return wrapper
+        return wrapper
 
-
-class GameEnd(Exception):
-    pass
-
-
-class GameRoomNotExists(Exception):
-    pass
-
-
-class RoundNotEnded(Exception):
-    pass
+    return decorator
 
 
 class Round(_p.BaseModel):
@@ -69,13 +68,13 @@ class Round(_p.BaseModel):
         now = self.now_utc
 
         if now < self.end_of_round:
-            raise RoundNotEnded("Round not ended!")
+            raise game.RoundNotEnded("Round not ended!")
 
         self._set_end_of_round(round_duration)
 
     def increase_round(self, max_rounds: int):
         if self.current_round == max_rounds:
-            raise GameEnd("All rounds passed.")
+            raise game.GameEnd("All rounds passed.")
         self.current_round += 1
 
 
@@ -102,7 +101,7 @@ async def check_status(instance: "GameRoom", s: _t.Sequence[GameStatus]):
     try:
         await instance.reload_cache()
     except AssertionError:
-        raise GameRoomNotExists()
+        raise game.GameRoomNotExists()
     return instance.status in s or "*" in s
 
 
@@ -118,30 +117,29 @@ def from_status[
     interval: int = 2,
 ) -> F:
     async def wrapper(self: "GameRoom", *args, **kwargs):
-        try:
-            if (
-                await wait(
-                    check_status, _for=_for, interval=interval, instance=self, s=s
+        if (
+            await wait(check_status, _for=_for, interval=interval, instance=self, s=s)
+        ) is False:
+            if raise_error:
+                raise TimeoutError(
+                    f"For {_for} seconds function {func.__name__} doesn't return True."
                 )
-            ) is False:
-                if raise_error:
-                    raise TimeoutError(
-                        f"For {_for} seconds function {func.__name__} doesn't return True."
-                    )
-                else:
-                    return
-            res = await func(self, *args, **kwargs)
-            if after_set_status is not None:
-                await self.set_status(after_set_status)
-            return res
-        except GameRoomNotExists:
-            return
+            else:
+                return
+        res = await func(self, *args, **kwargs)
+        if after_set_status is not None:
+            await self.set_status(after_set_status)
+        return res
 
     return wrapper
 
 
 class GameRoom(CacheModel[CHAT_ID], ChatModel):
-    model_config = _p.ConfigDict(use_enum_values=True)
+    model_config = _p.ConfigDict(
+        use_enum_values=True,
+        validate_default=True,
+        ser_json_timedelta="iso8601",
+    )
 
     cache_prefix: _t.ClassVar[str] = CachePrefix.game_room
     save_msg_id: _t.ClassVar[bool] = True
@@ -167,7 +165,7 @@ class GameRoom(CacheModel[CHAT_ID], ChatModel):
             return
         return self.saved_msgs_ids[0]
 
-    @cached_property
+    @property
     def chat_id(self) -> CHAT_ID:
         return self.id
 
@@ -179,6 +177,32 @@ class GameRoom(CacheModel[CHAT_ID], ChatModel):
     def __bot__(self):
         return spybot
 
+    def clear(self):
+        """
+        Delete all attributes in instance.
+        """
+        del self.__dict__
+
+    @asynccontextmanager
+    async def manager(self, save_room: bool):
+        try:
+            yield
+        except game.Exit:
+            return
+        except game.GameEnd:
+            await self.finish_game()
+        except game.GameRoomNotExists:
+            await self.clear()
+        except game.RoundNotEnded:
+            await self.notify_about_time_to_the_and_of_round()
+        except game.NotSave:
+            return
+        except AttributeError:
+            pass
+        else:
+            if save_room is True:
+                await self.save_in_cache()
+
     async def exists(self) -> bool:
         try:
             await self.load_cached(self.cache_identity)
@@ -187,9 +211,33 @@ class GameRoom(CacheModel[CHAT_ID], ChatModel):
         else:
             return True
 
+    async def not_exists(self):
+        if not (await self.exists()):
+            raise game.Exit()
+
     async def set_status(self, s: GameStatus) -> None:
         self.status = s
         await self.save_in_cache()
+
+    def append_player(self, player: TelegramUser):
+        self.players.append(player, room_id=self.id)
+
+    async def add_player(self, player: TelegramUser):
+        self.append_player(player)
+
+        await self.save_in_cache()
+        await self.display_players_in_join_message()
+
+        text = await texts.YOU_JOINED_TO_THE_GAME(player.language)
+        link = (
+            await self.create_chat_invite_link(expire_date=_date.timedelta(seconds=30))
+        ).invite_link
+
+        await player.send_message(
+            text=text.format(link),
+            parse_mode=enums.ParseMode.MARKDOWN_V2,
+            link_preview_options=types.LinkPreviewOptions(is_disabled=True),
+        )
 
     def start_round(self):
         self.round.increase_round(self.game_settings.rounds)
@@ -213,6 +261,90 @@ class GameRoom(CacheModel[CHAT_ID], ChatModel):
         text = (await text(self.language_code)).format(seconds)
 
         await self.send_message(text=text)
+
+    async def recruitment_link(self):
+        return await create_start_link(
+            bot=self.__bot__, payload=self.cache_key, encode=True
+        )
+
+    async def recruitment_join_button(self):
+        keyboard = InlineKeyboardBuilder()
+        keyboard.add(
+            types.InlineKeyboardButton(
+                text=await texts.JOIN_TO_THE_GAME(self.language_code),
+                url=await self.recruitment_link(),
+            )
+        )
+        return keyboard.as_markup()
+
+    async def display_players_in_join_message(self):
+        join_message_id = self.join_message_id
+        assert join_message_id is not None, "Join message not found."
+
+        txt = await texts.RECRUITMENT_MESSAGE(self.language_code)
+        display_players = await texts.DISPLAY_PLAYERS(self.language_code)
+
+        players = ", ".join(
+            [
+                player.mention_markdown(player.full_name)
+                for player in self.players.in_game
+            ]
+        )
+        display_players = display_players.format(players, len(self.players.in_game))
+
+        await self.edit_message_text(
+            text=txt + "\n\n" + display_players,
+            message_id=join_message_id,
+            parse_mode=enums.ParseMode.MARKDOWN_V2,
+            reply_markup=await self.recruitment_join_button(),
+        )
+
+    async def start_recruitment(self):
+        await self.set_status(GameStatus.recruitment)
+        self.append_player(self.creator)
+        await self.save_in_cache()
+
+        await self.send_message(
+            await texts.RECRUITMENT_MESSAGE(self.language_code),
+            reply_markup=await self.recruitment_join_button(),
+            parse_mode=enums.ParseMode.MARKDOWN_V2,
+        )
+        await self.display_players_in_join_message()
+
+        message = await self.send_message(
+            (await texts.RECRUITMENT_WILL_END(self.language_code)).format(
+                (recruitment_time := spygame.recruitment_time)
+            ),
+        )
+
+        interval = spygame.recruitment_edit_interval
+        text = message.text
+
+        while recruitment_time > 0:
+            await asyncio.sleep(interval)
+
+            i = str(recruitment_time)
+            recruitment_time -= interval
+
+            text = text.replace(i, str(recruitment_time))
+
+            if await self.exists():
+                await message.edit_text(text)
+            else:
+                raise game.Exit()
+
+        if await self.exists():
+            await self.reload_cache()
+
+        if self.status != GameStatus.recruitment:
+            raise game.Exit()
+
+        await self.delete_all_sended_msgs()
+        await self.save_in_cache()
+
+    async def start_game(self):
+        await self.choose_game_package()
+        await self.start_recruitment()
 
     @classmethod
     async def load_by_user_id(cls, user_id: int) -> tuple["GameRoom", Player]:
@@ -251,9 +383,13 @@ class GameRoom(CacheModel[CHAT_ID], ChatModel):
             await self.creator.get_random_package()
         )
 
-        assert package is not None, AssertionAnswer(
-            texts.SOMETHING_WRONG, translate=self.language_code
-        )
+        if package is None:
+            await self.send_message(
+                await texts.YOU_DOESNT_HAVE_ANY_PACKAGE(self.language_code),
+            )
+            await asyncio.sleep(1)
+            raise game.GameEnd()
+
         self.package = package
 
     @check_field_is_not_none(field="package", msg="You need to define package first")
@@ -277,14 +413,12 @@ class GameRoom(CacheModel[CHAT_ID], ChatModel):
         else:
             location = random.choice(locations)
 
-        assert (
-            (number_of_locations := len(locations)) > self.game_settings.rounds,
-            AssertionAnswer(
-                texts.LOCATIONS_NEED_TO_BE_MORE_THAN_ROUNDS.format(
-                    number_of_locations, self.game_settings.rounds
-                ),
-                translate=self.language_code,
+        number_of_locations = len(locations)
+        assert number_of_locations > self.game_settings.rounds, AssertionAnswer(
+            texts.LOCATIONS_NEED_TO_BE_MORE_THAN_ROUNDS.format(
+                number_of_locations, self.game_settings.rounds
             ),
+            translate=self.language_code,
         )
 
         self.location = location
@@ -302,11 +436,8 @@ class GameRoom(CacheModel[CHAT_ID], ChatModel):
             if location_roles is not None and isinstance(location_roles, list):
                 roles = [role for role in roles if str(role.id) in location_roles]
 
-        assert (
-            (len(location_roles) + spies) >= number_of_players,
-            AssertionAnswer(
-                texts.SELECTED_ROLES_LESS_THAN_PLAYERS, translate=self.language_code
-            ),
+        assert (len(location_roles) + spies) >= number_of_players, AssertionAnswer(
+            texts.SELECTED_ROLES_LESS_THAN_PLAYERS, translate=self.language_code
         )
 
         random.shuffle(roles)
@@ -339,10 +470,10 @@ class GameRoom(CacheModel[CHAT_ID], ChatModel):
 
     async def finish_game(self) -> None:
         await self.set_status(GameStatus.end)
-        for player in self.players:
-            await player.delete_cache()
-        await self.delete_cache()
+        await self.unset_players()
+        await self.delete_all_sended_msgs()
         await self.send_message(await texts.GAME_ENDED(self.language_code))
+        await self.delete_cache()
 
     async def set_current_player(self, player: Player) -> None:
         assert player in self.players.in_game
@@ -381,3 +512,14 @@ class GameRoom(CacheModel[CHAT_ID], ChatModel):
         question_player_id = self.question_to_player.id
         if player.id == question_player_id or self.cur_player.id == question_player_id:
             await self.define_question_to_player()
+
+    async def set_players(self):
+        for player in self.players:
+            await player.save_in_cache()
+
+    async def unset_players(self):
+        for player in self.players:
+            try:
+                await player.delete_cache()
+            except AssertionError:
+                continue

@@ -8,6 +8,14 @@ if _t.TYPE_CHECKING:
     from utils.translate import TranslateStr
 
 
+async def handler(error: AssertionError, *args, **kw):
+    handler = None
+    for handler in Assertion.is_assertion(error):
+        await handler.send(*args, **kw)
+    if not handler:
+        raise error
+
+
 class Assertion(ABC):
 
     @classmethod
@@ -41,7 +49,7 @@ class AssertionAnswer(Assertion):
         to_send = self.msg
         if self.translate:
             to_send = (await to_send(self.translate)).format(*self.args, **self.kw)
-        await extract_message(msg).answer(self.msg)
+        await extract_message(msg).answer(to_send)
 
     def __str__(self) -> str:
         return self.msg

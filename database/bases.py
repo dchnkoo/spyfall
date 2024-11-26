@@ -1,5 +1,6 @@
 from .funcs import funcs
 
+import pydantic as _p
 import sqlmodel as _sql
 import datetime as _date
 import typing as _t
@@ -28,4 +29,11 @@ class Name:
     name: str
 
 
-class Dates(UpdatedDate, CreateDate): ...
+class Dates(UpdatedDate, CreateDate):
+
+    @_p.field_validator("created_date", "updated_date")
+    @classmethod
+    def validate_dates(cls, v: str | _date.datetime):
+        if isinstance(v, str):
+            return _date.datetime.fromisoformat(v)
+        return v
