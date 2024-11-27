@@ -1,3 +1,4 @@
+from aiogram.client.default import Default
 from database import Settings, TelegramUser, Location, Package, Role
 
 from .players import Player, PlayersCollection
@@ -185,6 +186,7 @@ class GameRoom(CacheModel[CHAT_ID], ChatModel):
 
     @asynccontextmanager
     async def manager(self, save_room: bool):
+        status = self.status
         try:
             yield
         except game.Exit:
@@ -201,6 +203,9 @@ class GameRoom(CacheModel[CHAT_ID], ChatModel):
             pass
         else:
             if save_room is True:
+                await self.reload_cache()
+                if status != self.status:
+                    return
                 await self.save_in_cache()
 
     async def exists(self) -> bool:
@@ -523,3 +528,101 @@ class GameRoom(CacheModel[CHAT_ID], ChatModel):
                 await player.delete_cache()
             except AssertionError:
                 continue
+
+    async def send_message(
+        self,
+        text: str,
+        business_connection_id: str | None = None,
+        message_thread_id: int | None = None,
+        parse_mode: str | Default | None = None,
+        entities: list[types.MessageEntity] | None = None,
+        link_preview_options: types.LinkPreviewOptions | Default | None = None,
+        disable_notification: bool | None = None,
+        protect_content: bool | Default | None = None,
+        allow_paid_broadcast: bool | None = None,
+        message_effect_id: str | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        reply_markup: (
+            types.InlineKeyboardMarkup
+            | types.ReplyKeyboardMarkup
+            | types.ReplyKeyboardRemove
+            | types.ForceReply
+            | None
+        ) = None,
+        allow_sending_without_reply: bool | None = None,
+        disable_web_page_preview: bool | Default | None = None,
+        reply_to_message_id: int | None = None,
+        request_timeout: int | None = None,
+        **action_kw,
+    ) -> types.Message:
+        msg = await super(GameRoom, self).send_message(
+            text,
+            business_connection_id,
+            message_thread_id,
+            parse_mode,
+            entities,
+            link_preview_options,
+            disable_notification,
+            protect_content,
+            allow_paid_broadcast,
+            message_effect_id,
+            reply_parameters,
+            reply_markup,
+            allow_sending_without_reply,
+            disable_web_page_preview,
+            reply_to_message_id,
+            request_timeout,
+            **action_kw,
+        )
+        await self.save_in_cache()
+        return msg
+
+    async def send_photo(
+        self,
+        photo: types.InputFile | str,
+        business_connection_id: str | None = None,
+        message_thread_id: int | None = None,
+        caption: str | None = None,
+        parse_mode: str | Default | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        show_caption_above_media: bool | Default | None = None,
+        has_spoiler: bool | None = None,
+        disable_notification: bool | None = None,
+        protect_content: bool | Default | None = None,
+        allow_paid_broadcast: bool | None = None,
+        message_effect_id: str | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        reply_markup: (
+            types.InlineKeyboardMarkup
+            | types.ReplyKeyboardMarkup
+            | types.ReplyKeyboardRemove
+            | types.ForceReply
+            | None
+        ) = None,
+        allow_sending_without_reply: bool | None = None,
+        reply_to_message_id: int | None = None,
+        request_timeout: int | None = None,
+        **action_kw,
+    ) -> types.Message:
+        msg = await super(GameRoom, self).send_photo(
+            photo,
+            business_connection_id,
+            message_thread_id,
+            caption,
+            parse_mode,
+            caption_entities,
+            show_caption_above_media,
+            has_spoiler,
+            disable_notification,
+            protect_content,
+            allow_paid_broadcast,
+            message_effect_id,
+            reply_parameters,
+            reply_markup,
+            allow_sending_without_reply,
+            reply_to_message_id,
+            request_timeout,
+            **action_kw,
+        )
+        await self.save_in_cache()
+        return msg

@@ -12,18 +12,14 @@ import pydantic as _p
 import typing as _t
 import json
 
-if _t.TYPE_CHECKING:
-    from caching import CacheModel
-
 
 def save_sended[
     F: _t.Callable[[F], _t.Coroutine[_t.Any, _t.Any, types.Message]]
 ](func: F) -> F:
-    async def wrapper[F: ("ChatModel", "CacheModel")](self: F, *args, **kwargs):
+    async def wrapper(self: "ChatModel", *args, **kwargs):
         msg = await func(self, *args, **kwargs)
         if self.save_msg_id:
             self.saved_msgs_ids.append(msg.message_id)
-            await self.save_in_cache()
         return msg
 
     return wrapper
