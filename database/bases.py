@@ -29,11 +29,4 @@ class Name:
     name: str
 
 
-class Dates(UpdatedDate, CreateDate):
-
-    @_p.field_validator("created_date", "updated_date")
-    @classmethod
-    def validate_dates(cls, v: str | _date.datetime):
-        if isinstance(v, str):
-            return _date.datetime.fromisoformat(v)
-        return v
+class Dates(UpdatedDate, CreateDate): ...

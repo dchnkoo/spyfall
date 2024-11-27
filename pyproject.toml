@@ -16,7 +16,6 @@ redis = "^5.2.0"
 async-lru = "^2.0.4"
 pydantic-collections = "^0.6.0"
 gpytranslate = "^1.5.1"
-isodate = "^0.7.2"
 
 
 [build-system]

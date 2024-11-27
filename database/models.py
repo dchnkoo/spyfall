@@ -20,9 +20,10 @@ import json
 
 
 model_config = _p.ConfigDict(
-    use_enum_values=True,
     str_strip_whitespace=True,
+    validate_assignment=True,
     validate_default=True,
+    use_enum_values=True,
     extra="ignore",
     frozen=False,
 )

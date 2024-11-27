@@ -10,7 +10,6 @@ import datetime as _date
 import sqlmodel as _sql
 import pydantic as _p
 import typing as _t
-import isodate
 import uuid
 
 if _t.TYPE_CHECKING:
@@ -119,6 +118,7 @@ class Settings(
     TableManager["Settings", uuid.UUID],
     table=True,
 ):
+    model_config = _p.ConfigDict(validate_assignment=True)
 
     user_id: int = _sql.Field(
         foreign_key="telegramuser.id", ondelete="CASCADE", sa_type=_sql.BigInteger
@@ -139,14 +139,6 @@ class Settings(
         default_factory=partial(_date.timedelta, minutes=spygame.default_round_time),
     )
     rounds: int = spygame.default_rounds
-
-    @_p.field_validator("round_time", mode="before")
-    @classmethod
-    def validate_round_time(cls, v: str):
-        if isinstance(v, str):
-            duration = isodate.parse_duration(v)
-            assert isinstance(duration, _date.timedelta)
-        return v
 
     def reset_locations_and_roles(self):
         self.use_locations_id = []
