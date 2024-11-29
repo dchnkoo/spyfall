@@ -199,7 +199,7 @@ class GameRoom(ChatModel):
 
     async def notify_about_round(self):
         await self.send_message(
-            (await texts.BEGIN_ROUND(self.language_code)).format(self.current_round)
+            (await texts.BEGIN_ROUND(self.language_code)).format(self.current_round),
         )
 
     async def notify_about_time_to_the_end_of_round(self):
@@ -420,7 +420,8 @@ class GameRoom(ChatModel):
         await self.send_message(
             (await texts.ASK_QUESTION_MSG(self.language_code)).format(
                 cur_player_link, qiestion_to_player_link
-            )
+            ),
+            parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
 
     async def redefine_game_players(self, player: Player):

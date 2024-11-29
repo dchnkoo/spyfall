@@ -375,7 +375,7 @@ CONFIGURE_ROUND_TIME = TranslateStr(
 Configure round time ⚙️
 
 ⚠️ Recommendations for round time to number of players:
-    3–4 players — 6 minutes
+    4 players — 6 minutes
     5–6 players — 7 minutes
     7–8 players — 8 minutes
     9–10 players — 9 minutes
@@ -451,13 +451,12 @@ SPIES_CONFIGURE_EXPLAIN = TranslateStr(
 NOTIFY_USER_ABOUT_ROLE = TranslateStr(
     """
 Your role: {role.name} 👤
-
 Role description: {role.description}
 """
 )
 
 
-NOTIFY_ABOUT_LOCATION = TranslateStr("Location: {location.name}")
+NOTIFY_ABOUT_LOCATION = TranslateStr("Location: {location.name} 📍")
 
 
 YOU_ALREADY_IN_GAME = TranslateStr("You already in game.")

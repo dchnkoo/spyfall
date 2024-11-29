@@ -148,21 +148,6 @@ class RoleModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
             assert len(v) <= spygame.role_description_limit
         return v
 
-    @classmethod
-    def model_validate_json(
-        cls,
-        json_data: str | bytes | bytearray,
-        *,
-        strict: bool | None = None,
-        context: _t.Any | None = None,
-    ):
-        data = json.loads(json_data)
-        validated = cls.__pydantic_validator__.validate_python(
-            data, strict=strict, context=context
-        )
-        validated.is_spy = data["is_spy"]
-        return validated
-
     def __eq__(self, other: "RoleModel") -> bool:
         assert other is RoleModel or issubclass(
             other.__class__, RoleModel

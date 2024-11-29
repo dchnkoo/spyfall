@@ -105,6 +105,10 @@ class Role(
 
     location_id: uuid.UUID = _sql.Field(foreign_key="location.id", ondelete="CASCADE")
 
+    @property
+    def is_spy(self):
+        return False
+
     async def get_location(self) -> Location:
         return await self.get_relation(
             Location, Location.id == self.location_id, one=True
