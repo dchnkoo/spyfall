@@ -12,13 +12,18 @@ class SpyGame(BaseSettings):
     roles_limit: int = 11
     role_description_limit: int = 300
 
-    min_round_time: int = 3
+    min_round_time: int = 6
     max_round_time: int = 10
 
     min_rounds: int = 3
     max_rounds: int = 10
 
     max_players_in_room: int = 12
+    min_players_in_room: int = 4
 
     recruitment_time: int = 60
-    recruitment_edit_interval: int = 5
+    recruitment_edit_interval: int = 10
+
+    two_spies_limits_on_players: int = 6
+
+    rest_beetwen_rounds: int = 10

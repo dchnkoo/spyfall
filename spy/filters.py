@@ -2,7 +2,7 @@ from aiogram.utils.deep_linking import decode_payload, create_start_link
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram import filters, types, Bot, enums
 
-from spy.game import GameStatus, GameRoom, PLAYER_STATUS
+from spy.game import GameStatus, PLAYER_STATUS, GameManager
 from spy import texts
 
 from database import TelegramUser
@@ -20,15 +20,14 @@ class GameProccessFilter(filters.Filter):
     async def __call__(self, msg: types.Message | types.CallbackQuery, *args, **kwds):
         msg = extract_message(msg)
 
-        try:
-            room = await GameRoom.load_cached(msg.chat.id)
-        except AssertionError:
+        manager = GameManager.meta.get_room(msg.chat.id)
+        if manager is None:
             return False
 
         if not self.statuses:
             return True
 
-        return room.status in self.statuses
+        return manager.status in self.statuses
 
 
 class RegisteredUser(filters.Filter):
@@ -74,15 +73,22 @@ class PlayerFilter(filters.Filter):
         self.is_question_to = is_question_to
 
     async def __call__(self, message: types.Message | types.CallbackQuery, **_):
-        chat_id = extract_message(message).chat.id
         user_id = message.from_user.id
 
         try:
-            room = await GameRoom.load_cached(chat_id)
+            manager = await GameManager.meta.load_by_user_id(user_id)
         except AssertionError:
             return False
 
+        if manager is None:
+            return False
+
+        room = manager.room
         player = room.players.get(user_id)
+
+        if not player:
+            return False
+
         status = True if not self.status else player.status in self.status
         is_creator = True if not self.is_creator else player.id == room.creator.id
         is_current = (

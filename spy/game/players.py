@@ -65,7 +65,7 @@ class Player(TelegramUserModel):
 
     async def leave(self):
         self.status = "left"
-        await self.save_in_cache()
+        await self.delete_cache()
 
     async def remove(self):
         await self.delete_cache()
@@ -84,7 +84,7 @@ class Player(TelegramUserModel):
             location=location
         )
 
-        text = location_text + "\n" + role_text
+        text = location_text + "\n\n" + role_text
         if location.image_url is not None:
             await self.send_photo(location.image_url, caption=text)
             return
@@ -97,15 +97,13 @@ class PlayersCollection(BaseCollectionModel[Player]):
         assert __object is TelegramUserModel or issubclass(
             __object.__class__, TelegramUserModel
         )
-        assert not self.in_game.get(__object.id), AssertionAnswer(
-            texts.YOU_ALREADY_IN_GAME, translate=__object.language
-        )
         assert len(self.in_game) < spygame.max_players_in_room, AssertionAnswer(
             texts.GAME_ROOM_ALREADY_FULL, translate=__object.language
         )
 
         player = Player(**__object.model_dump(), room_id=room_id)
         super(PlayersCollection, self).append(player)
+        return player
 
     def get(self, player_id: int) -> _t.Optional[Player]:
         for p in self:
@@ -139,6 +137,25 @@ class PlayersCollection(BaseCollectionModel[Player]):
     def lefted(self):
         return self.filter_by_status("left")
 
+    @property
+    def max_score(self):
+        players = []
+
+        max_score_player: Player | None = None
+        for player in self:
+            if max_score_player is None or (
+                max_score_player.score < (player.score and player.score > 0)
+            ):
+                max_score_player = player
+        else:
+            players.append(max_score_player)
+
+        if max_score_player is not None:
+            for player in self:
+                if player.score == max_score_player.score:
+                    players.append(player)
+        return self.__class__(players)
+
     async def set_status(self, s: PLAYER_STATUS):
         for player in self.filter_by_status("in_game", "kicked"):
             await player.set_stauts(s)
@@ -156,3 +173,7 @@ class PlayersCollection(BaseCollectionModel[Player]):
     def remove_players(self, *players: Player):
         for player in players:
             self.safety_remove(player)
+
+    async def quit(self, player: Player):
+        self.remove(player)
+        await player.leave()

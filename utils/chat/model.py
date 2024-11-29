@@ -4,9 +4,9 @@ from contextlib import asynccontextmanager
 from functools import partial
 
 from aiogram.utils.chat_action import ChatActionSender
+from aiogram import Bot, types, exceptions
 from aiogram.client.default import Default
 from aiogram.enums import ChatAction
-from aiogram import Bot, types
 
 import pydantic as _p
 import typing as _t
@@ -66,10 +66,17 @@ class ChatModel(ABC, _p.BaseModel):
         msg_id = self.get_last_sended_msg
         if msg_id is None:
             return
-        await self.delete_message(message_id=msg_id)
+        try:
+            await self.delete_message(message_id=msg_id)
+        except exceptions.TelegramBadRequest:
+            return
 
-    async def delete_all_sended_msgs(self):
+    async def delete_sended_messages(self):
         while self.saved_msgs_ids:
+            await self.delete_last_sended_msg()
+
+    async def del_messages(self, num: int = 1):
+        for _ in range(num):
             await self.delete_last_sended_msg()
 
     @property

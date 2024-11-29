@@ -4,7 +4,7 @@ from utils.exc.callback import CallbackAlert
 
 from database import TelegramUser
 
-from spy.game import GameRoom, Player
+from spy.game import GameManager, exc as game_exception
 from spy.routers import spybot
 from spy import texts
 
@@ -17,14 +17,17 @@ from sqlalchemy import exc
 
 from loguru import logger
 
+import typing as _t
+
 
 def create_user_or_update(func):
     @wraps(func)
     async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kwargs):
         new_user = msg.from_user
+        lang_code = new_user.language_code or "en"
         try:
             assert new_user is not None, AssertionAnswer(
-                texts.SOMETHING_WRONG_TRY_START
+                texts.SOMETHING_WRONG_TRY_START, translate=lang_code
             )
             user = await TelegramUser.add(new_user)
         except exc.IntegrityError:
@@ -41,10 +44,15 @@ def with_user(func):
     @wraps(func)
     async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kw):
         user = msg.from_user
-        assert user is not None, AssertionAnswer(texts.SOMETHING_WRONG_TRY_START)
+        lang_code = user.language_code or "en"
+        assert user is not None, AssertionAnswer(
+            texts.SOMETHING_WRONG_TRY_START, translate=lang_code
+        )
 
         user = await TelegramUser.load(user.id)
-        assert user is not None, AssertionAnswer(texts.SOMETHING_WRONG_TRY_START)
+        assert user is not None, AssertionAnswer(
+            texts.SOMETHING_WRONG_TRY_START, translate=lang_code
+        )
 
         return await func(msg, *args, user=user, **kw)
 
@@ -55,7 +63,10 @@ def with_user_cache(func):
     @wraps(func)
     async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kw):
         from_user = msg.from_user
-        assert from_user is not None, AssertionAnswer(texts.SOMETHING_WRONG_TRY_START)
+        lang_code = from_user.language_code or "en"
+        assert from_user is not None, AssertionAnswer(
+            texts.SOMETHING_WRONG_TRY_START, translate=lang_code
+        )
         user_id = from_user.id
         try:
             user = await TelegramUser.load_cached(user_id)
@@ -76,24 +87,19 @@ def decode_start_link(func):
     return wrapper
 
 
-def with_play_room(f=None, *, by_user_id: bool = False, save_after: bool = True):
+def with_manager(func: _t.Callable | None = None, *, by_user_id: bool = True):
     def decorator(func):
         @wraps(func)
         async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kw):
             chat_id = extract_chat_id(msg)
-            if by_user_id:
-                player = await Player.load_cached(chat_id)
-                room = await GameRoom.load_cached(player.room_id)
-            else:
-                room = await GameRoom.load_cached(chat_id)
-                player = room.players.get(msg.from_user.id)
-                assert player is not None
-            async with room.manager(save_room=save_after):
-                return await func(msg, *args, play_room=room, player=player, **kw)
+            manager = GameManager.meta.get_room(chat_id)
+            if not manager:
+                raise AssertionError()
+            return await func(msg, *args, manager=manager, **kw)
 
         return error_handler(wrapper)
 
-    return decorator if not callable(f) else decorator(f)
+    return decorator(func) if callable(func) else decorator
 
 
 def error_handler(func):
@@ -111,6 +117,13 @@ def error_handler(func):
                 show_alert=e.show_alert,
                 **e.kw
             )
+        except (game_exception.GameException, game_exception.GameExceptionWrapper) as e:
+            chat_id = extract_chat_id(msg)
+            manager = GameManager.meta.get_room(chat_id)
+            if manager is None:
+                await e.handle(manager)
+                return
+            await e.handle(manager)
         except Exception as e:
             logger.exception(e)
             await extract_message(msg).answer(texts.SOMETHING_WRONG_TRY_START)

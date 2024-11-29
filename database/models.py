@@ -59,7 +59,7 @@ class TelegramUserModel(User, ChatModel, CacheModel[int]):
     def __eq__(self, other: "TelegramUserModel") -> bool:
         assert other is TelegramUserModel or issubclass(
             other.__class__, TelegramUserModel
-        )
+        ), "It's not subclass or class of TelegramUserModel"
         return self.id == other.id
 
     def __hash__(self) -> int:
@@ -76,7 +76,9 @@ class PackageModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
         return hash(self.name)
 
     def __eq__(self, other: "PackageModel") -> bool:
-        assert other is PackageModel or issubclass(other.__class__, PackageModel)
+        assert other is PackageModel or issubclass(
+            other.__class__, PackageModel
+        ), "It's not subclass or class of PackageModel"
         return self.name == other.name
 
 
@@ -106,7 +108,9 @@ class LocationModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
         return content_type.startswith("image")
 
     def __eq__(self, other: "LocationModel") -> bool:
-        assert other is LocationModel or issubclass(other.__class__, LocationModel)
+        assert other is LocationModel or issubclass(
+            other.__class__, LocationModel
+        ), "It's not subclass or class of Location model"
         return self.name == other.name
 
     def __hash__(self) -> int:
@@ -160,7 +164,9 @@ class RoleModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
         return validated
 
     def __eq__(self, other: "RoleModel") -> bool:
-        assert other is RoleModel or issubclass(other.__class__, RoleModel)
+        assert other is RoleModel or issubclass(
+            other.__class__, RoleModel
+        ), "It's not subclass or class of RoleModel"
         return self.name == other.name
 
     def __hash__(self) -> int:

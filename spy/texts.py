@@ -451,6 +451,7 @@ SPIES_CONFIGURE_EXPLAIN = TranslateStr(
 NOTIFY_USER_ABOUT_ROLE = TranslateStr(
     """
 Your role: {role.name} 👤
+
 Role description: {role.description}
 """
 )
@@ -462,8 +463,13 @@ NOTIFY_ABOUT_LOCATION = TranslateStr("Location: {location.name}")
 YOU_ALREADY_IN_GAME = TranslateStr("You already in game.")
 
 
-SELECTED_ROLES_LESS_THAN_PLAYERS = TranslateStr(
-    "Selected roles less than players. Cannot start the game."
+ROLES_LESS_THAN_PLAYERS = TranslateStr(
+    "Roles less than players in {} location. Cannot start the game."
+)
+
+
+YOU_NEED_MIN_THE_PLAYERS_TO_PLAY_WITH_TWO_SPIES = TranslateStr(
+    f"You need minimum {spygame.two_spies_limits_on_players} players to play with two spies."
 )
 
 
@@ -530,22 +536,22 @@ GAME_STARTED = TranslateStr(
 
 🔍 *Here’s how it works:*
 1. Each player has been assigned a role:
-   - One or two of you is the *Spy*, who doesn’t know the location.
-   - The rest of you know the location and have specific roles to play\.
+One or two of you is the *Spy*, who doesn’t know the location.
+The rest of you know the location and have specific roles to play.
 
-2. *The players’ goal:* Identify the Spy by asking clever questions\.
-   - Questions should help uncover the Spy without revealing too much about the location\.
+2. *The players’ goal:* Identify the Spy by asking clever questions.
+Questions should help uncover the Spy without revealing too much about the location.
 
-3. *The Spy’s goal:* Figure out the location or avoid suspicion until the round ends\.
+3. *The Spy’s goal:* Figure out the location or avoid suspicion until the round ends.
 
-4. At the end of the round, there will be a *voting phase*, where everyone votes for who they believe the Spy is\.
+4. At the end of the round, there will be a *voting phase*, where everyone votes for who they believe the Spy is.
 
-5. *Optional Early Voting:* At any moment during the game, if a player is confident about who the Spy is, they can initiate *early voting* using the `/vote` command in [chat]({link}) with me\.
+5. *Optional Early Voting:* At any moment during the game, if a player is confident about who the Spy is, they can initiate *early voting* using the `/vote @username` command.
 
-⌛ *Round duration:* {} minutes\.
-🎲 *Game number of rounds:* {} rounds\.
+⌛ *Round duration:* {} minutes.
+🎲 *Game number of rounds:* {} rounds.
 
-🎭 Let the game begin\! The current player’s turn will be announced automatically\.
+🎭 Let the game begin! The current player’s turn will be announced automatically.
 """
 )
 
@@ -595,6 +601,45 @@ Let's get the game rolling and find out who the spy is! 🕵️‍♀️
 """
 )
 
+
 THIS_ROOM_DOESNT_EXISTS = TranslateStr("That room doesn't exists already.")
 
+
 YOU_JOINED_TO_THE_GAME = TranslateStr("You joined to the [game]({})")
+
+
+ASK_QUESTION_MSG = TranslateStr(
+    r"""
+*🔄 Next turn in the "Spyfall" game\!*
+🔍 *{}*, it’s your turn\!
+Ask a question to *{}*\.
+
+🎙️ *Example question:*
+_"What are you doing here?"_ or _"What does this place look like?"_
+"""
+)
+
+
+RESULTS_PREV_ROUND = TranslateStr("Results after {} round:\n")
+
+
+WINNERS = TranslateStr("Winners of game with max score:\n")
+
+
+NO_WINNERS = TranslateStr("In game are'nt any winners.")
+
+
+ROUND_START_IN = TranslateStr("Round {} will start in {} seconds.")
+
+
+ROOM_NOT_FOUND = TranslateStr("Game room not found.")
+
+
+NOT_ENOUGH_PLAYERS_TO_START = TranslateStr(
+    f"Not enough players to start game. Minimum need {spygame.min_players_in_room} players."
+)
+
+
+NOT_ENOUGH_TO_DISTRIBUTE = TranslateStr(
+    f"There are not enough players to distribute tasks. There must be at least {spygame.min_players_in_room} players."
+)

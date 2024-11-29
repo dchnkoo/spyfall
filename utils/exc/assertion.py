@@ -33,22 +33,14 @@ class Assertion(ABC):
 
 class AssertionAnswer(Assertion):
 
-    def __init__(
-        self,
-        msg: _t.Union[str, "TranslateStr"],
-        *args,
-        translate: _t.Optional[str] = None,
-        **kw
-    ) -> None:
+    def __init__(self, msg: "TranslateStr", *args, translate: str = "en", **kw) -> None:
         self.msg = msg
         self.translate = translate
         self.args = args
         self.kw = kw
 
     async def send(self, msg: types.Message | types.CallbackQuery, *args, **kwargs):
-        to_send = self.msg
-        if self.translate:
-            to_send = (await to_send(self.translate)).format(*self.args, **self.kw)
+        to_send = (await self.msg(self.translate)).format(*self.args, **self.kw)
         await extract_message(msg).answer(to_send)
 
     def __str__(self) -> str:

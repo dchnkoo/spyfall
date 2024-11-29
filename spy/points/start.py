@@ -8,9 +8,7 @@ from database import Settings
 
 from aiogram.utils.deep_linking import create_startgroup_link, decode_payload
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram import types, filters, Bot, enums, F
-
-import datetime as _date
+from aiogram import types, filters, Bot, F
 
 import typing as _t
 
@@ -49,21 +47,17 @@ async def start_command(msg: types.Message, bot: Bot, user: "TelegramUser", **_)
     )
     keyboard.adjust(1, 2)
 
-    await bot.set_my_commands(list(private), language_code=user.language)
     await user.send_message(
         (await texts.START_MSG(user.language)).format(user=user),
         reply_markup=keyboard.as_markup(),
     )
 
 
-game_prefix_key = game.GameRoom.cache_prefix + ":"
-
-
 @private_only_msg_without_state.message(
     filters.Command(
         private.start,
         magic=F.args.func(
-            lambda args: decode_payload(args).startswith(game_prefix_key)
+            lambda args: decode_payload(args).startswith(game.GameRoom.prefix)
         ),
     ),
 )
@@ -72,6 +66,15 @@ game_prefix_key = game.GameRoom.cache_prefix + ":"
 async def join_to_the_game(
     message: types.Message, playload: str, user: "TelegramUser", **_
 ):
-    room = await game.GameRoom.load_cached(playload.removeprefix(game_prefix_key))
+    manager = game.GameManager.meta.get_room(
+        int(playload.removeprefix(game.GameRoom.prefix))
+    )
 
-    await room.add_player(user)
+    if manager is None:
+        await user.send_message(await texts.ROOM_NOT_FOUND(user.language))
+        return
+
+    try:
+        await manager.room.add_player(user)
+    except game.exc.GameException as e:
+        raise game.exc.GameExceptionWrapper(manager, e)

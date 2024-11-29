@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 
 import pydantic as _p
 import typing as _t
+import json
 
 
 type seconds = int
@@ -49,10 +50,6 @@ class CacheModel[_K](ABC, _p.BaseModel):
         model = await cls.load_raw_cached(cache_identity=cache_identity)
         assert model is not None, "Model doesn't exists."
         return cls.model_validate_json(model)
-
-    async def reload_cache(self) -> None:
-        model = await self.load_cached(self.cache_identity)
-        self.__dict__.update(model.__dict__)
 
     async def save_in_cache(self) -> None:
         async with self.cache_controller() as client:

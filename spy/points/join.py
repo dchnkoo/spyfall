@@ -1,6 +1,5 @@
 from spy.routers import group_without_state
 from spy.decorators import with_user_cache
-from spy.commands import group
 from spy import texts
 
 from aiogram import F, types, Bot, enums
@@ -20,9 +19,3 @@ async def added_to_group(msg: types.Message, user: "TelegramUser", bot: Bot):
                 await texts.GREETINGS_MSG_IN_GROUP(user.language),
                 parse_mode=enums.ParseMode.MARKDOWN,
             )
-
-        await bot.set_my_commands(
-            list(group),
-            types.BotCommandScopeChat(chat_id=msg.chat.id),
-            language_code=user.language,
-        )
