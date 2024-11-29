@@ -1,4 +1,4 @@
-from aiogram.utils.deep_linking import decode_payload, create_start_link
+from aiogram.utils.deep_linking import create_start_link
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram import filters, types, Bot, enums
 
@@ -9,18 +9,21 @@ from database import TelegramUser
 
 from utils.msg import extract_message
 
-import typing as _t
-
 
 class GameProccessFilter(filters.Filter):
 
-    def __init__(self, *s: GameStatus) -> None:
+    def __init__(self, *s: GameStatus, by_user_id: bool = False) -> None:
         self.statuses = s
+        self.by_user_id = by_user_id
 
     async def __call__(self, msg: types.Message | types.CallbackQuery, *args, **kwds):
         msg = extract_message(msg)
 
-        manager = GameManager.meta.get_room(msg.chat.id)
+        if self.by_user_id:
+            manager = await GameManager.meta.load_by_user_id(msg.from_user.id)
+        else:
+            manager = GameManager.meta.get_room(msg.chat.id)
+
         if manager is None:
             return False
 

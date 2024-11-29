@@ -87,14 +87,20 @@ def decode_start_link(func):
     return wrapper
 
 
-def with_manager(func: _t.Callable | None = None, *, by_user_id: bool = True):
+def with_manager(func: _t.Callable | None = None, *, by_user_id: bool = False):
     def decorator(func):
         @wraps(func)
         async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kw):
             chat_id = extract_chat_id(msg)
-            manager = GameManager.meta.get_room(chat_id)
-            if not manager:
-                raise AssertionError()
+            if by_user_id:
+                manager = await GameManager.meta.load_by_user_id(chat_id)
+                if manager is None:
+                    await extract_message(msg).answer(
+                        await texts.ROOM_NOT_FOUND(msg.from_user.language_code or "en")
+                    )
+                    return
+            else:
+                manager = GameManager.meta.get_room(chat_id)
             return await func(msg, *args, manager=manager, **kw)
 
         return error_handler(wrapper)

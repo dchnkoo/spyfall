@@ -140,7 +140,7 @@ class GameManager(metaclass=GameRoomMeta):
 
     def set_status(self, s: GameStatus):
         assert (
-            self._game_blocked is False or self.status != GameStatus.playing
+            self._game_blocked is False or not self.room.playing
         ), "Use block_game_proccess context manager."
         self.room.set_status(s)
         task = self.get_task(status=s)
@@ -266,7 +266,7 @@ class GameManager(metaclass=GameRoomMeta):
 
     @asynccontextmanager
     async def block_game_proccess(self):
-        assert self.status == GameStatus.playing
+        assert self.room.playing
 
         self._game_blocked = True
         game_task = self.current_task
