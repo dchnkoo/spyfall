@@ -442,3 +442,46 @@ class GameRoom(ChatModel):
     async def send_error_msg_and_finish_game(self, text: str):
         await self.__bot__.send_message(self.chat_id, text=text)
         raise exc.GameEnd()
+
+    async def quit(self, player: Player):
+        await self.players.quit(player)
+        recruitment = self.status == GameStatus.recruitment
+
+        try:
+            if player == self.creator:
+                await self.send_error_msg_and_finish_game(
+                    await texts.CREATOR_LEFT_THE_GAME(self.language_code)
+                )
+
+            if not recruitment:
+                if player.role and player.is_spy and not self.players.spies:
+                    await self.send_error_msg_and_finish_game(
+                        await texts.NO_SPIES_FOR_CONTINUE(self.language_code)
+                    )
+
+                if len(self.players) < spygame.min_players_in_room:
+                    await self.send_error_msg_and_finish_game(
+                        await texts.NOT_ENOUGH_PLAYERS_TO_CONTINUE(self.language_code)
+                    )
+        except Exception as e:
+            raise e
+        else:
+            if recruitment:
+                await self.display_players_in_join_message()
+            else:
+                await self.redefine_game_players(player)
+
+            if self.status == GameStatus.playing:
+                await self.send_ask_question_msg()
+        finally:
+            if not recruitment:
+                await self.only_send_message(
+                    text=(await texts.PLAYER_LEFT_GAME(self.language_code)).format(
+                        player.mention_markdown()
+                    ),
+                    parse_mode=enums.ParseMode.MARKDOWN_V2,
+                )
+            await player.send_message(
+                await texts.PLAYER_LEFT_GAME.format("You")(self.language_code),
+                parse_mode=enums.ParseMode.MARKDOWN_V2,
+            )

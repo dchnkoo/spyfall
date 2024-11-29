@@ -40,21 +40,6 @@ class ChatModel(ABC, _p.BaseModel):
         assert isinstance(value, list)
         self._saved_msgs_ids = value
 
-    @classmethod
-    def model_validate_json(
-        cls,
-        json_data: str | bytes | bytearray,
-        *,
-        strict: bool | None = None,
-        context: _t.Any | None = None,
-    ):
-        data = json.loads(json_data)
-        validated = cls.__pydantic_validator__.validate_python(
-            data, strict=strict, context=context
-        )
-        validated.saved_msgs_ids = data["saved_msgs_ids"]
-        return validated
-
     @property
     def get_last_sended_msg(self):
         try:
@@ -169,6 +154,13 @@ class ChatModel(ABC, _p.BaseModel):
     def pin_chat_message(self):
         return partial(
             self.__bot__.pin_chat_message,
+            chat_id=self.chat_id,
+        )
+
+    @property
+    def only_send_message(self):
+        return partial(
+            self.__bot__.send_message,
             chat_id=self.chat_id,
         )
 

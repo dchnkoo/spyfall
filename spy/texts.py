@@ -642,3 +642,17 @@ NOT_ENOUGH_PLAYERS_TO_START = TranslateStr(
 NOT_ENOUGH_TO_DISTRIBUTE = TranslateStr(
     f"There are not enough players to distribute tasks. There must be at least {spygame.min_players_in_room} players."
 )
+
+
+PLAYER_LEFT_GAME = TranslateStr("{} quit from game ⚠️")
+
+
+NO_SPIES_FOR_CONTINUE = TranslateStr("No spies to continue the game.")
+
+
+CREATOR_LEFT_THE_GAME = TranslateStr("Creator of room left the game. Cannot continue.")
+
+
+NOT_ENOUGH_PLAYERS_TO_CONTINUE = TranslateStr(
+    "Not enough players to continue the game."
+)

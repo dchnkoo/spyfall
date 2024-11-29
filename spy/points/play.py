@@ -62,6 +62,24 @@ async def joint_to_the_game(
 
 
 @group_only_msg_without_state.message(
+    filters.Command(group.leave),
+    game_filters.GameProccessFilter(),
+    ~game_filters.PlayerFilter("left"),
+)
+@with_user_cache
+@with_manager
+async def left_the_game(
+    msg: types.Message, manager: GameManager, user: "TelegramUser", **_
+):
+    try:
+        player = manager.room.players.get(user.id)
+        assert player is not None, f"PLayer with {user.id} is None"
+        await manager.room.quit(player)
+    finally:
+        await msg.delete()
+
+
+@group_only_msg_without_state.message(
     filters.Command(group.end),
     game_filters.GameProccessFilter(),
     filters.or_f(

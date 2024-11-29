@@ -19,6 +19,7 @@ class PrivateCommands(Commands):
     game_settings = BotCommand(
         command="game_settings", description="Configure the game ⚙️"
     )
+    leave = BotCommand(command="leave", description="Leave from game 🚪")
     rules = BotCommand(command="rules", description="SpyGame rules 📖")
     help = BotCommand(
         command="help", description="See all commands and waht they do 🌚"
@@ -27,15 +28,18 @@ class PrivateCommands(Commands):
     cancel = BotCommand(command="cancel", description="Cancel action.")
 
 
+private = PrivateCommands()
+
+
 class GroupCommands(Commands):
     play = BotCommand(command="play", description="Start the recruitment to game! 🎲")
     start_playing = BotCommand(
         command="start_playing", description="End recruitment and start play 🎮"
     )
+    leave = private.leave
     vote = BotCommand(command="vote", description="Vote for spy! 🕵🏻‍♂️")
     join = BotCommand(command="join", description="Join to the game room. 👥")
     end = BotCommand(command="end", description="End the game. ⛔️")
 
 
-private = PrivateCommands()
 group = GroupCommands()

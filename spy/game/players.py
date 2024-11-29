@@ -44,6 +44,11 @@ class Player(TelegramUserModel):
     score: int = 0
 
     @property
+    def is_spy(self):
+        assert self.role is not None, "PLayer role is none"
+        return self.role.is_spy
+
+    @property
     def cache_identity(self):
         return self.chat_id
 
