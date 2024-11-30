@@ -115,6 +115,12 @@ class PlayersCollection(BaseCollectionModel[Player]):
             if player_id == p.id:
                 return p
 
+    def get_by_username(self, username: str):
+        username = username.strip()
+        for player in self:
+            if player.username == username:
+                return player
+
     def filter_by_status(self, *s: PLAYER_STATUS):
         return self.__class__([player for player in self if player.status in s])
 

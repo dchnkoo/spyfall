@@ -565,7 +565,7 @@ DISPLAY_PLAYERS = TranslateStr("*In game:*\n\n{}\n\n*Total:* {}")
 
 
 GREETINGS_MSG_IN_GROUP = TranslateStr(
-    """
+    f"""
 **🤖 Hello, everyone! I'm the Spyfall Game Master! 🕵️‍♂️**
 
 Thank you for adding me to your group! I'm here to bring the Spyfall experience to life 🎉. Here's what you need to know:
@@ -589,10 +589,10 @@ Without these permissions, I might not be able to run the game smoothly.
 ~~---~~
 
 🎮 **How to Start the Game:**
-- Use the `/play` command to initiate a new game.
+- Use the `/{group.play.command}` command to initiate a new game.
 - I'll handle everything, from assigning roles to managing gameplay.
 
-🕹 Ready to play? Grant me admin rights and type `/play` to begin!
+🕹 Ready to play? Grant me admin rights and type `/{group.play.command}` to begin!
 
 ~~---~~
 
@@ -654,5 +654,15 @@ CREATOR_LEFT_THE_GAME = TranslateStr("Creator of room left the game. Cannot cont
 
 
 NOT_ENOUGH_PLAYERS_TO_CONTINUE = TranslateStr(
-    "Not enough players to continue the game."
+    f"Not enough players to continue the game. There must be at least {spygame.min_players_in_room} players."
+)
+
+
+NOT_CORRECT_MENTION_FOR_VOTE = TranslateStr(
+    f"Incorrect user mention for voting for him\.\n\nUse `/{group.vote.command} @suspected_username`"
+)
+
+
+YOU_CAN_VOTE_ONLY_FOR_USER_WHICH_IN_GAME = TranslateStr(
+    "You cannot vote for users which currently not in that game."
 )

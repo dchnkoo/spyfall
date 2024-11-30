@@ -37,7 +37,10 @@ class GroupCommands(Commands):
         command="start_playing", description="End recruitment and start play 🎮"
     )
     leave = private.leave
-    vote = BotCommand(command="vote", description="Vote for spy! 🕵🏻‍♂️")
+    vote = BotCommand(
+        command="vote",
+        description="Vote for spy! 🕵🏻‍♂️ Use @ after command to select user.",
+    )
     join = BotCommand(command="join", description="Join to the game room. 👥")
     end = BotCommand(command="end", description="End the game. ⛔️")
 

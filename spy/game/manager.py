@@ -70,6 +70,12 @@ def task_error_handler(func):
             return
         except exc.GameException as e:
             await e.handle(self)
+        except Exception as e:
+            logger.exception(e)
+            await self.room.only_send_message(
+                await texts.SOMETHING_WRONG(self.room.language_code)
+            )
+            await self.finish_game()
 
     return wrapper
 
@@ -225,6 +231,7 @@ class GameManager(metaclass=GameRoomMeta):
 
     @on_status(GameStatus.playing)
     async def play(self):
+        # await self.room.check_if_enough_players()
         await self.room.choose_game_package()
         await self.room.choose_game_location()
         await self.room.distribute_roles()
@@ -251,18 +258,26 @@ class GameManager(metaclass=GameRoomMeta):
                 await self._condition.wait_for(lambda: self._game_blocked is False)
 
             await self.room.send_round_results(round)
+            await self.room.redefine_location_and_roles()
         else:
             raise exc.FinishGame()
 
     async def finish_game(self):
+        self.meta.remove_room(self.room.id)
+        self.clear_queue()
+        self.task_handler.cancel()
+        self.rounds.close()
+
         self.room.set_status(GameStatus.end)
         await self.room.finish_game()
 
-        self.meta.remove_room(self.room.id)
         self.cancel_current_task()
-        self.task_handler.cancel()
-        self.rounds.close()
         del self
+
+    async def go_to_next_round(self):
+        self.round_event.set()
+        await asyncio.sleep(0.1)
+        self.round_event.clear()
 
     @asynccontextmanager
     async def block_game_proccess(self):
@@ -276,4 +291,5 @@ class GameManager(metaclass=GameRoomMeta):
             self._game_blocked = False
             self._condition.notify_all()
 
+        self.room.set_status(GameStatus.playing)
         self.current_task = game_task

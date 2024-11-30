@@ -47,13 +47,6 @@ def check_field_is_not_none(field: str, msg: _t.Optional[str] = None):
 
 
 class GameStatus(enum.StrEnum):
-    define_location_and_roles = "define_location_and_roles"
-    notify_users_about_roles = "notify_users_about_roles"
-    say_spies_about_each_other = "say_spies_about_each_other"
-    define_game_players = "define_game_players"
-    choose_package = "choose_package"
-    check_location = "check_location"
-    guess_location = "guess_location"
     summary_vote = "summary_vote"
     recruitment = "recruitment"
     playing = "playing"
@@ -335,14 +328,9 @@ class GameRoom(ChatModel):
         roles = list((await self.location.get_roles()))
         number_of_players = len(self.players)
 
-        spies = 2 if (two_spies := self.game_settings.two_spies) else 1
+        await self.check_if_can_use_two_spies()
 
-        if two_spies and number_of_players < spygame.two_spies_limits_on_players:
-            await self.send_error_msg_and_finish_game(
-                await texts.YOU_NEED_MIN_THE_PLAYERS_TO_PLAY_WITH_TWO_SPIES(
-                    self.language_code
-                )
-            )
+        spies = 2 if self.game_settings.two_spies else 1
 
         if roles_id := self.game_settings.use_roles_id:
             location_roles = roles_id.get(str(self.location.id), None)
@@ -451,6 +439,34 @@ class GameRoom(ChatModel):
         await self.__bot__.send_message(self.chat_id, text=text)
         raise exc.GameEnd()
 
+    async def check_room(self):
+        await self.check_if_spies_exists()
+        await self.check_if_can_use_two_spies()
+        await self.check_if_enough_players()
+
+    async def check_if_can_use_two_spies(self):
+        if (
+            self.game_settings.two_spies
+            and len(self.players) < spygame.two_spies_limits_on_players
+        ):
+            await self.send_error_msg_and_finish_game(
+                await texts.YOU_NEED_MIN_THE_PLAYERS_TO_PLAY_WITH_TWO_SPIES(
+                    self.language_code
+                )
+            )
+
+    async def check_if_spies_exists(self):
+        if not self.players.spies:
+            await self.send_error_msg_and_finish_game(
+                await texts.NO_SPIES_FOR_CONTINUE(self.language_code)
+            )
+
+    async def check_if_enough_players(self):
+        if len(self.players) < spygame.min_players_in_room:
+            await self.send_error_msg_and_finish_game(
+                await texts.NOT_ENOUGH_PLAYERS_TO_CONTINUE(self.language_code)
+            )
+
     async def quit(self, player: Player):
         await self.players.quit(player)
         try:
@@ -458,17 +474,8 @@ class GameRoom(ChatModel):
                 await self.send_error_msg_and_finish_game(
                     await texts.CREATOR_LEFT_THE_GAME(self.language_code)
                 )
-
             if not self.recruitment:
-                if player.role and player.is_spy and not self.players.spies:
-                    await self.send_error_msg_and_finish_game(
-                        await texts.NO_SPIES_FOR_CONTINUE(self.language_code)
-                    )
-
-                if len(self.players) < spygame.min_players_in_room:
-                    await self.send_error_msg_and_finish_game(
-                        await texts.NOT_ENOUGH_PLAYERS_TO_CONTINUE(self.language_code)
-                    )
+                await self.check_room()
         except Exception as e:
             raise e
         else:

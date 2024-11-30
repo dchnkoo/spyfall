@@ -1,10 +1,10 @@
 from spy.decorators import with_user_cache, with_manager, create_user_or_update
 from spy.game import GameManager, GameStatus, GameRoom
 from spy.routers import group_only_msg_without_state
-from spy import filters as game_filters
+from spy import filters as game_filters, texts
 from spy.commands import group
 
-from aiogram import filters, types
+from aiogram import filters, types, F, enums, Bot
 
 import typing as _t
 
@@ -64,7 +64,10 @@ async def joint_to_the_game(
 @group_only_msg_without_state.message(
     filters.Command(group.leave),
     game_filters.GameProccessFilter(),
-    ~game_filters.PlayerFilter("left"),
+    filters.or_f(
+        game_filters.PlayerFilter("in_game"),
+        game_filters.PlayerFilter("kicked"),
+    ),
 )
 @with_user_cache
 @with_manager
@@ -75,6 +78,56 @@ async def left_the_game(
         player = manager.room.players.get(user.id)
         assert player is not None, f"PLayer with {user.id} is None"
         await manager.room.quit(player)
+    finally:
+        await msg.delete()
+
+
+def validate_entities(entities: list[types.MessageEntity]):
+    if (count_enitities := len(entities)) > 2 or count_enitities < 2:
+        return False
+    enitity = entities[1]
+    if enitity.type in (
+        enums.MessageEntityType.MENTION,
+        enums.MessageEntityType.TEXT_MENTION,
+    ):
+        return True
+    return False
+
+
+@group_only_msg_without_state.message(
+    filters.Command(group.vote, magic=F.args.func(lambda args: args is not None)),
+    game_filters.GameProccessFilter(GameStatus.playing),
+    game_filters.PlayerFilter("in_game"),
+    F.entities.func(validate_entities),
+)
+@with_user_cache
+@with_manager
+async def vote_for_spy(
+    msg: types.Message, manager: GameManager, user: "TelegramUser", bot: Bot, **_
+):
+    try:
+        entity = msg.entities[1]
+        assert entity is not None, "Vote enitity is None"
+
+        match entity.type:
+            case enums.MessageEntityType.MENTION:
+                username = msg.text[entity.offset + 1 :]
+                suspected = manager.room.players.get_by_username(username)
+            case enums.MessageEntityType.TEXT_MENTION:
+                suspected = manager.room.players.get(entity.user.id)
+            case _:
+                raise Exception("Something goes wrong while handle msg enitity type.")
+
+        if suspected is None:
+            await msg.answer(
+                await texts.YOU_CAN_VOTE_ONLY_FOR_USER_WHICH_IN_GAME(
+                    manager.room.language_code
+                )
+            )
+            return
+
+        async with manager.block_game_proccess():
+            ...
     finally:
         await msg.delete()
 
