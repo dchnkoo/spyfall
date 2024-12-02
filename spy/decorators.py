@@ -78,6 +78,19 @@ def with_user_cache(func):
     return error_handler(wrapper)
 
 
+def with_player(func):
+    @wraps(func)
+    async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kw):
+        user_id = msg.from_user.id
+        manager = await GameManager.meta.load_by_user_id(user_id)
+        assert manager is not None, "Manager cannot be None"
+        player = manager.room.players.get(user_id)
+        assert player is not None, "Player cannot be None"
+        return await func(msg, *args, player=player, **kw)
+
+    return error_handler(wrapper)
+
+
 def decode_start_link(func):
     @wraps(func)
     async def wrapper(msg: types.Message, command: filters.CommandObject, *args, **kw):

@@ -167,7 +167,10 @@ class PlayersCollection(BaseCollectionModel[Player]):
 
         if max_score_player is not None:
             for player in self:
-                if player.score == max_score_player.score:
+                if (
+                    player.score == max_score_player.score
+                    and player != max_score_player
+                ):
                     players.append(player)
         return self.__class__(players)
 

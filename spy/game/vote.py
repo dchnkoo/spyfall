@@ -35,7 +35,7 @@ class Vote(_p.BaseModel, ABC):
 
 class EarlyVote(Vote):
 
-    voted: dict[Player, bool] = _p.Field(default=dict)
+    voted: dict[Player, bool] = _p.Field(default_factory=dict)
     suspected: Player
     author: Player
     against: int = 0
@@ -91,7 +91,7 @@ class EarlyVote(Vote):
 
 class SummaryVote(Vote):
 
-    voted: dict[Player, Player] = _p.Field(default=dict)
+    voted: dict[Player, Player] = _p.Field(default_factory=dict)
     suspected: dict[Player, int] = _p.Field(default_factory=lambda: defaultdict(int))
     msg_counter: int = 0
 

@@ -408,7 +408,11 @@ async def add_game_location(callback: types.CallbackQuery, user: "TelegramUser",
     else:
         settings.use_locations_id.append(location_id)
 
+    settings.use_roles_id = {
+        k: v for k, v in settings.use_roles_id.items() if k in settings.use_locations_id
+    }
     await settings.save()
+
     await choose_game_locations(callback)
 
 
@@ -528,6 +532,9 @@ async def choose_role(callback: types.CallbackQuery, user: "TelegramUser", **_):
         roles.remove(role_id)
     else:
         roles.append(role_id)
+
+    if not roles:
+        del settings.use_roles_id[str(role.location_id)]
 
     await settings.save()
 

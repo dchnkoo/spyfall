@@ -288,7 +288,23 @@ def process_markdown(text):
             parts.append(markdown_decoration.quote(text[last_end:start]))
 
         markdown, txt = [i for i in match.groups() if i]
-        markdown = markdown.replace(txt, markdown_decoration.quote(txt))
+        if pattern := MARKDOWN.search(txt):
+            patterns = [i for i in pattern.groups() if i and MARKDOWN.fullmatch(i)]
+            for index, p in enumerate(patterns):
+                text = txt.replace(p, f"@@{index}@@")
+                markdown = markdown.replace(txt, text)
+                txt = text
+
+            text = markdown_decoration.quote(txt)
+            markdown = markdown.replace(txt, text)
+            txt = text
+
+            for index, p in enumerate(patterns):
+                text = txt.replace(f"@@{index}@@", p)
+                markdown = markdown.replace(txt, text)
+                txt = text
+        else:
+            markdown = markdown.replace(txt, markdown_decoration.quote(txt))
         parts.append(markdown)
 
         last_end = end
@@ -300,10 +316,10 @@ def process_markdown(text):
 
 
 t = Translator(
-    # proxies={
-    #     "https": "https://lylleryals11:TIK4VQW-XZLONCK-HEG505N-9SFJNES-RRUNCNP-3R9PFAG-PXGJBRH@usa.rotating.proxyrack.net:9000",
-    #     "http": "http://lylleryals11:TIK4VQW-XZLONCK-HEG505N-9SFJNES-RRUNCNP-3R9PFAG-PXGJBRH@usa.rotating.proxyrack.net:9000",
-    # }
+    proxies={
+        "https": "https://lylleryals11:TIK4VQW-XZLONCK-HEG505N-9SFJNES-RRUNCNP-3R9PFAG-PXGJBRH@usa.rotating.proxyrack.net:9000",
+        "http": "http://lylleryals11:TIK4VQW-XZLONCK-HEG505N-9SFJNES-RRUNCNP-3R9PFAG-PXGJBRH@usa.rotating.proxyrack.net:9000",
+    }
 )
 
 

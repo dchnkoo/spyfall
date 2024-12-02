@@ -1,13 +1,20 @@
-from spy.decorators import with_user_cache, with_manager, create_user_or_update
+from spy.decorators import (
+    create_user_or_update,
+    with_user_cache,
+    with_manager,
+    with_player,
+)
 from spy.routers import group_only_msg_without_state, group_clear
-from spy.game import GameManager, GameStatus, GameRoom
+from spy.game import GameManager, GameStatus, GameRoom, Player
 from spy import filters as game_filters, texts
+from spy.callback import CallbackPrefix
 from spy.commands import group
 
-from aiogram import filters, types, F, enums, Bot
+from utils.exc.callback import CallbackAlert
+
+from aiogram import filters, types, F, enums
 
 import typing as _t
-import asyncio
 
 if _t.TYPE_CHECKING:
     from database import TelegramUser
@@ -113,7 +120,7 @@ async def vote_for_spy(
         match entity.type:
             case enums.MessageEntityType.MENTION:
                 username = msg.text[entity.offset + 1 :]
-                suspected = manager.room.players.get_by_username(username)
+                suspected = manager.room.players.get_by_username(username.strip())
             case enums.MessageEntityType.TEXT_MENTION:
                 suspected = manager.room.players.get(entity.user.id)
             case _:
@@ -143,6 +150,46 @@ async def vote_for_spy(
                 await manager.tasks.wait_until_current_task_complete()
     finally:
         await msg.delete()
+
+
+voting_filters = (
+    game_filters.GameProccessFilter(GameStatus.voting),
+    game_filters.PlayerFilter("in_game"),
+)
+
+
+@group_only_msg_without_state.callback_query(
+    F.data == CallbackPrefix.vote_per, *voting_filters
+)
+@group_only_msg_without_state.callback_query(
+    F.data == CallbackPrefix.vote_againts, *voting_filters
+)
+@with_player
+@with_manager
+async def early_voting(
+    msg: types.CallbackQuery, manager: GameManager, player: Player, **_
+):
+    if player == manager.room.vote.suspected:
+        raise CallbackAlert(
+            message=await texts.SUSPECTED_CANNOT_VOTE_FOR_SELF(player.language),
+            show_alert=True,
+        )
+
+    if msg.data == CallbackPrefix.vote_per:
+        vote = manager.room.make_vote(voter=player)
+    else:
+        vote = manager.room.make_vote(voter=player, vote=False)
+
+    if vote is False:
+        raise CallbackAlert(
+            message=await texts.YOU_ALREADY_VOTED(player.language), show_alert=True
+        )
+    else:
+        _, reply_markup = manager.room.vote_message()
+        await msg.message.edit_reply_markup(
+            msg.inline_message_id, reply_markup=reply_markup
+        )
+        raise CallbackAlert(message=await texts.YOU_VOTED(player.language))
 
 
 @group_only_msg_without_state.message(

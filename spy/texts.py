@@ -708,3 +708,23 @@ NOT_SUCCESSFULY_EARLY_VOTING = TranslateStr(
 CONTINUE_THE_ROUND = TranslateStr(
     "There is one more spy left in the game and you have time to try to find him and get more points for this round."
 )
+
+
+YOU_ALREADY_VOTED = TranslateStr("You already voted")
+
+
+YOU_VOTED = TranslateStr("You voted ✅")
+
+
+SUSPECTED_CANNOT_VOTE_FOR_SELF = TranslateStr(
+    "Suspected player cannot vote for self 🕵️‍♂️"
+)
+
+
+REDEFINED_LOCATION_ROLES_MESSAGE = TranslateStr(
+    "*⚠️ Just was redefine the location and roles, check your new roles and locations in [chat]({}) with me*"
+)
+
+ANYONE_WASNT_KICKED = TranslateStr(
+    "Anyone wasn't excluded from game, if player which was suspected in spy was a spy, author of vote get the 1 point"
+)

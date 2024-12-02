@@ -17,8 +17,8 @@ from spy.routers import spybot
 
 from settings import spygame
 
+from aiogram.utils.deep_linking import create_start_link, create_telegram_link
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.utils.deep_linking import create_start_link
 from aiogram import enums, types
 
 import datetime as _date
@@ -165,6 +165,11 @@ class GameRoom(ChatModel):
         self.status_history.append(self.status)
         self.status = s
 
+    async def bot_link(self):
+        me = await self.__bot__.get_me()
+        link = create_telegram_link(me.username)
+        return link
+
     async def append_player(self, player: TelegramUser):
         if (await Player.load_raw_cached(player.id)) is not None:
             await player.send_message(await texts.YOU_ALREADY_IN_GAME(player.language))
@@ -206,7 +211,7 @@ class GameRoom(ChatModel):
 
         text = await texts.WINNERS(self.language_code)
         for player in winners:
-            text += "\n\t" + player.mention_markdown() + " - " + str(player.score)
+            text += "\n\t" + player.mention_markdown() + " \\- " + str(player.score)
         await self.send_message(text=text)
 
     async def notify_about_round(self):
@@ -301,7 +306,7 @@ class GameRoom(ChatModel):
                     await texts.YOU_DOES_NOT_HAVE_LOCATIONS_IN_THAT_PACKAGE(
                         self.language_code
                     )
-                ).format(self.package.name),
+                ).format(self.package.escaped_name),
             )
 
         if self.game_settings.use_locations_id:
@@ -330,7 +335,7 @@ class GameRoom(ChatModel):
     @check_field_is_not_none(field="location", msg="You need to define location first.")
     async def distribute_roles(self) -> None:
         roles = list((await self.location.get_roles()))
-        number_of_players = len(self.players)
+        number_of_players = len(self.players.in_game)
 
         await self.check_if_can_use_two_spies()
 
@@ -345,7 +350,7 @@ class GameRoom(ChatModel):
         if (len(roles) + spies) < number_of_players:
             await self.send_error_msg_and_finish_game(
                 (await texts.ROLES_LESS_THAN_PLAYERS(self.language_code)).format(
-                    self.location.name
+                    self.location.escaped_name
                 )
             )
 
@@ -372,9 +377,15 @@ class GameRoom(ChatModel):
 
             players[player_index].role = roles[roles_index]
 
+    async def send_redefine_location_roles_message(self):
+        text = await texts.REDEFINED_LOCATION_ROLES_MESSAGE(self.language_code)
+        text = text.format(await self.bot_link())
+        await self.send_message(text)
+
     async def redefine_location_and_roles(self) -> None:
         await self.choose_game_location()
         await self.distribute_roles()
+        await self.send_redefine_location_roles_message()
 
     async def finish_game(self) -> None:
         await self.unset_players()
@@ -504,6 +515,22 @@ class GameRoom(ChatModel):
     def vote_message(self):
         assert self.vote is not None, "You need to init voting first."
         return self.vote.vote_message()
+
+    @_t.overload
+    def make_vote(sself, voter: Player, _for: Player, vote: bool = True):
+        """
+        In summary voting you need to include per the voter vote.
+        """
+
+    @_t.overload
+    def make_vote(sself, voter: Player, _for: Player | None = None, vote: bool = True):
+        """
+        In early voting you doesn't need to include user because he specified when vote initialized.
+        """
+
+    def make_vote(self, voter: Player, _for: Player | None = None, vote: bool = True):
+        assert self.vote is not None, "You need to init voting first."
+        return self.vote.vote(voter=voter, _for=_for, vote=vote)
 
     @contextmanager
     def vote_manager(self, vote: Vote):

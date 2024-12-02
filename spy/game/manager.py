@@ -335,7 +335,9 @@ class GameManager(metaclass=GameRoomMeta):
             ),
         )
 
-        while (round := self.round) < self.room.game_settings.rounds:
+        while (round := self.round) < (
+            total_rounds := (self.room.game_settings.rounds + 1)
+        ):
             await self.room.notify_users_about_roles()
             await self.room.notify_about_round()
             await self.room.notify_about_time_to_the_end_of_round()
@@ -354,7 +356,8 @@ class GameManager(metaclass=GameRoomMeta):
 
             await self.room.players.set_status("in_game")
             await self.room.send_round_results(round)
-            await self.room.redefine_location_and_roles()
+            if (round + 1) < total_rounds:
+                await self.room.redefine_location_and_roles()
         else:
             raise exc.FinishGame()
 
@@ -379,33 +382,36 @@ class GameManager(metaclass=GameRoomMeta):
             vote_result, bool
         ), "In Early vote results need to be boolean."
 
-        if vote_result:
-            if not vote.suspected.is_spy:
-                self.room.players.in_game.spies.increase_score(2)
-                await self.room.send_unsuccessfully_early_voting_msg()
+        try:
+            if vote_result:
+                if not vote.suspected.is_spy:
+                    self.room.players.in_game.spies.increase_score(2)
+                    await self.room.send_unsuccessfully_early_voting_msg()
+                else:
+                    [
+                        player.increase_scrore(1)
+                        for player in vote.voted
+                        if vote.voted[player]
+                    ]
+                    await self.room.send_successfully_early_voting_msg()
+                await vote.suspected.set_stauts("kicked")
             else:
-                [
-                    player.increase_scrore(1)
-                    for player in vote.voted
-                    if vote.voted[player]
-                ]
-                await self.room.send_successfully_early_voting_msg()
-            await vote.suspected.set_stauts("kicked")
-        if vote.suspected.is_spy:
-            vote.author.score += 1
-
-        if (
-            self.room.game_settings.two_spies
-            and len(self.room.players.in_game.spies) == 1
-        ):
-            minutes, _ = self.room.time_to_end_of_round_in_minutes_and_seconds
-            if minutes > 1:
                 await self.room.send_message(
-                    await texts.CONTINUE_THE_ROUND(self.room.language_code)
+                    await texts.ANYONE_WASNT_KICKED(self.room.language_code)
                 )
-                await self.room.notify_about_time_to_the_end_of_round()
-                return
-        await self.go_to_next_round()
+
+            if vote.suspected.is_spy and len(self.room.players.in_game.spies) > 0:
+                minutes, _ = self.room.time_to_end_of_round_in_minutes_and_seconds
+                if minutes > 1:
+                    await self.room.send_message(
+                        await texts.CONTINUE_THE_ROUND(self.room.language_code)
+                    )
+                    await self.room.notify_about_time_to_the_end_of_round()
+                    return
+            await self.go_to_next_round()
+        finally:
+            if vote.suspected.is_spy:
+                vote.author.score += 1
 
     async def finish_game(self):
         self.meta.remove_room(self.room.id)
