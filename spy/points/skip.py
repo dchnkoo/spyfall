@@ -3,7 +3,7 @@ from spy.routers import private_only_msg
 from spy.commands import private
 from spy import fsm, texts
 
-from aiogram import types, filters
+from aiogram import types, filters, enums
 
 import typing as _t
 
@@ -57,7 +57,11 @@ async def skip(
         await state.clear()
         txt = texts.CANCELED_ACTION
 
-    await message.answer(await txt(user.language))
+    await message.answer(
+        await txt(user.language), parse_mode=enums.ParseMode.MARKDOWN_V2
+    )
 
     if next_step_txt is not None:
-        await message.answer(await next_step_txt(user.language))
+        await message.answer(
+            await next_step_txt(user.language), parse_mode=enums.ParseMode.MARKDOWN_V2
+        )

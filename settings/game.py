@@ -27,3 +27,5 @@ class SpyGame(BaseSettings):
     two_spies_limits_on_players: int = 6
 
     rest_beetwen_rounds: int = 10
+
+    early_vote_time: int = 30

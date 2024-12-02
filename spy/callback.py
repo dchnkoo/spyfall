@@ -37,3 +37,7 @@ class CallbackPrefix(enum.StrEnum):
     decrease_rounds = "dcr:"
     set_two_spies = "sts:"
     set_spies_know_each_other = "sseo:"
+
+    vote_per = "vote_per"
+    vote_againts = "vote_againts"
+    vote = "vote:"

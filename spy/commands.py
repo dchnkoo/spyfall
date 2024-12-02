@@ -32,6 +32,7 @@ private = PrivateCommands()
 
 
 class GroupCommands(Commands):
+    next = BotCommand(command="next", description="Pass the turn to another player 📨")
     play = BotCommand(command="play", description="Start the recruitment to game! 🎲")
     start_playing = BotCommand(
         command="start_playing", description="End recruitment and start play 🎮"

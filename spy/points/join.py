@@ -17,5 +17,5 @@ async def added_to_group(msg: types.Message, user: "TelegramUser", bot: Bot):
         if member.id == bot.id:
             await msg.answer(
                 await texts.GREETINGS_MSG_IN_GROUP(user.language),
-                parse_mode=enums.ParseMode.MARKDOWN,
+                parse_mode=enums.ParseMode.MARKDOWN_V2,
             )

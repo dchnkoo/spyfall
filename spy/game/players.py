@@ -36,12 +36,16 @@ def role_check(func):
 class Player(TelegramUserModel):
     db: _t.ClassVar[int] = redis.game_db
     cache_prefix: _t.ClassVar[str] = CachePrefix.in_game
+    cache_live_time: _t.ClassVar[int] = redis.default_cache_live_time
     save_msg: _t.ClassVar[bool] = True
 
     role: _t.Optional[RoleModel] = None
     status: PLAYER_STATUS = "in_game"
     room_id: room_id
     score: int = 0
+
+    def increase_scrore(self, num: int):
+        self.score += num
 
     @property
     def is_spy(self):
@@ -173,7 +177,7 @@ class PlayersCollection(BaseCollectionModel[Player]):
 
     def increase_score(self, num: int):
         for player in self:
-            player.score += num
+            player.increase_scrore(num=num)
 
     def safety_remove(self, player: Player):
         try:

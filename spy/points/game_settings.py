@@ -7,13 +7,13 @@ from spy import texts
 
 from settings import spygame
 
-from utils.msg import handle_content_type_text, create_new_query, edit_or_answer
+from utils.msg import create_new_query, edit_or_answer
 from utils.exc.callback import CallbackAlert
 
 from spy.decorators import with_user_cache
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram import filters, types, F
+from aiogram import filters, types, F, enums
 
 from datetime import timedelta
 
@@ -120,6 +120,7 @@ async def configure_rounds(query: types.CallbackQuery, user: "TelegramUser", **_
     await query.message.edit_text(
         text=text,
         reply_markup=keyboard.as_markup(),
+        parse_mode=enums.ParseMode.MARKDOWN_V2,
     )
 
 
@@ -157,6 +158,7 @@ async def configure_round_time(query: types.CallbackQuery, user: "TelegramUser",
     await query.message.edit_text(
         text=text,
         reply_markup=keyboard.as_markup(),
+        parse_mode=enums.ParseMode.MARKDOWN_V2,
     )
 
 
@@ -223,6 +225,7 @@ async def configure_number_of_rounds(
     await query.message.edit_text(
         text=text,
         reply_markup=keyboard.as_markup(),
+        parse_mode=enums.ParseMode.MARKDOWN_V2,
     )
 
 
@@ -258,7 +261,8 @@ async def select_game_package(callback: types.CallbackQuery, user: "TelegramUser
 
     if not packages:
         new_callback = await callback.message.edit_text(
-            await texts.YOU_DOESNT_HAVE_ANY_PACKAGE(user.language)
+            await texts.YOU_DOESNT_HAVE_ANY_PACKAGE(user.language),
+            parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
 
         await asyncio.sleep(0.6)
@@ -288,7 +292,9 @@ async def select_game_package(callback: types.CallbackQuery, user: "TelegramUser
         keyboard.adjust(1)
 
     await callback.message.edit_text(
-        await texts.CLICK_ON_PACKAGE(user.language), reply_markup=keyboard.as_markup()
+        await texts.CLICK_ON_PACKAGE(user.language),
+        reply_markup=keyboard.as_markup(),
+        parse_mode=enums.ParseMode.MARKDOWN_V2,
     )
 
 
@@ -319,7 +325,8 @@ async def validate_locations(user: "TelegramUser", callback: types.CallbackQuery
         await callback.message.edit_text(
             await texts.YOU_NEED_TO_SELECT_PACKAGE_FOR_SELECTING_LOCATIONS(
                 user.language
-            )
+            ),
+            parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
 
         await asyncio.sleep(1.5)
@@ -331,7 +338,8 @@ async def validate_locations(user: "TelegramUser", callback: types.CallbackQuery
 
     if not locations:
         await callback.message.edit_text(
-            await texts.YOU_NEED_ADD_LOCATIONS_FOR_PACKAGE_TO_CHOOSE(user.language)
+            await texts.YOU_NEED_ADD_LOCATIONS_FOR_PACKAGE_TO_CHOOSE(user.language),
+            parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
 
         await asyncio.sleep(2)
@@ -383,6 +391,7 @@ async def choose_game_locations(
     await callback.message.edit_text(
         await texts.SELECT_GAME_LOCATIONS(user.language),
         reply_markup=keyboard.as_markup(),
+        parse_mode=enums.ParseMode.MARKDOWN_V2,
     )
 
 
@@ -444,6 +453,7 @@ async def select_location_for_role(
     await callback.message.edit_text(
         await texts.SELECT_LOCATION_FOR_ROLE(user.language),
         reply_markup=keyboard.as_markup(),
+        parse_mode=enums.ParseMode.MARKDOWN_V2,
     )
 
 
@@ -461,7 +471,8 @@ async def choose_game_roles(callback: types.CallbackQuery, user: "TelegramUser",
 
     if not roles:
         await callback.message.edit_text(
-            await texts.YOU_NEED_ADD_ROLES_FOR_LOCATION_TO_CHOOSE(user.language)
+            await texts.YOU_NEED_ADD_ROLES_FOR_LOCATION_TO_CHOOSE(user.language),
+            parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
 
         await asyncio.sleep(2)
@@ -495,7 +506,9 @@ async def choose_game_roles(callback: types.CallbackQuery, user: "TelegramUser",
         keyboard.adjust(1)
 
     await callback.message.edit_text(
-        await texts.SELECT_GAME_ROLES(user.language), reply_markup=keyboard.as_markup()
+        await texts.SELECT_GAME_ROLES(user.language),
+        reply_markup=keyboard.as_markup(),
+        parse_mode=enums.ParseMode.MARKDOWN_V2,
     )
 
 
@@ -559,6 +572,7 @@ async def configure_spies(callback: types.CallbackQuery, user: "TelegramUser", *
     await callback.message.edit_text(
         await texts.SPIES_CONFIGURE_EXPLAIN(user.language),
         reply_markup=keyboard.as_markup(),
+        parse_mode=enums.ParseMode.MARKDOWN_V2,
     )
 
 

@@ -200,7 +200,7 @@ import json
 
 
 class SavedTranslates(_p.BaseModel):
-    file_name: _t.ClassVar[str] = "saved_translates.json"
+    file_name: _t.ClassVar[str] = "cached_translates.json"
     root_dir: _t.ClassVar[Path] = ROOT_DIR
     path: _t.ClassVar[Path] = root_dir / file_name
 
@@ -255,11 +255,56 @@ class SavedTranslates(_p.BaseModel):
         self.save()
 
 
+from aiogram.utils.markdown import markdown_decoration
 from spy.commands import private, group
 from gpytranslate import Translator
 
 
-t = Translator()
+MARKDOWN = re.compile(
+    r"""
+    (
+        (?<!\\)(?<!`)`(?!`)(.+?)(?<!\\)(?<!`)`(?!`)                   |
+        (?<!\\)(?<!\*)\*(?!\*)(.+?)(?<!\\)(?<!\*)\*(?!\*)             |
+        (?<!\\)(?<![\*])\*\*(?![\*])(.+?)(?<!\\)(?<![\*])\*\*(?![\*]) |
+        (?<!\\)(?<![_])__(?![_])(.+?)(?<!\\)(?<![_])__(?![_])         |
+        (?<!\\)(?<!_)_(?!_)(.+?)(?<!\\)(?<!_)_(?!_)                   |
+        (?<!\\)(?<!~)~(?!~)(.+?)(?<!\\)(?<!~)~(?!~)                   |
+        (?<!\\)(?<![`])```(?![`])(.+?)(?<!\\)(?<![`])```(?![`])       |
+        (?<!\\)\[(.*?)(?<!\\)\](?<!\\)\(.+(?<!\\)\)
+    )
+    """,
+    re.VERBOSE | re.DOTALL,
+)
+
+
+def process_markdown(text):
+    parts = []
+    last_end = 0
+
+    for match in MARKDOWN.finditer(text):
+        start, end = match.span()
+
+        if start > last_end:
+            parts.append(markdown_decoration.quote(text[last_end:start]))
+
+        markdown, txt = [i for i in match.groups() if i]
+        markdown = markdown.replace(txt, markdown_decoration.quote(txt))
+        parts.append(markdown)
+
+        last_end = end
+
+    if last_end < len(text):
+        parts.append(markdown_decoration.quote(text[last_end:]))
+
+    return "".join(parts)
+
+
+t = Translator(
+    # proxies={
+    #     "https": "https://lylleryals11:TIK4VQW-XZLONCK-HEG505N-9SFJNES-RRUNCNP-3R9PFAG-PXGJBRH@usa.rotating.proxyrack.net:9000",
+    #     "http": "http://lylleryals11:TIK4VQW-XZLONCK-HEG505N-9SFJNES-RRUNCNP-3R9PFAG-PXGJBRH@usa.rotating.proxyrack.net:9000",
+    # }
+)
 
 
 class TranslateStr(str):
@@ -298,7 +343,7 @@ class TranslateStr(str):
         exclude = list(exclude) + self.formated_parts + self.bot_commands
 
         for index, text in enumerate(exclude):
-            to_translate = to_translate.replace(text, f"__{index}__")
+            to_translate = to_translate.replace(text, f"@@{index}@@")
 
         translated = await t.translate(
             to_translate.to_translate,
@@ -311,8 +356,13 @@ class TranslateStr(str):
         else:
             txt = str(translated.text)
 
+        txt = process_markdown(txt)
+
         for index, text in enumerate(exclude):
-            txt = txt.replace(f"__{index}__", text)
+            txt = txt.replace(
+                f"@@{index}@@",
+                markdown_decoration.quote(text) if text in self.bot_commands else text,
+            )
 
         saved.set(to_lang, txt)
         return TranslateStr(txt, source_language_code=to_lang)

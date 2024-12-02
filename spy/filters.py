@@ -20,7 +20,10 @@ class GameProccessFilter(filters.Filter):
         msg = extract_message(msg)
 
         if self.by_user_id:
-            manager = await GameManager.meta.load_by_user_id(msg.from_user.id)
+            try:
+                manager = await GameManager.meta.load_by_user_id(msg.from_user.id)
+            except AssertionError:
+                return False
         else:
             manager = GameManager.meta.get_room(msg.chat.id)
 
@@ -56,6 +59,7 @@ class RegisteredUser(filters.Filter):
                 await msg.answer(
                     await texts.YOU_NEED_TO_GO_TO_THE_BOT(lang_code),
                     reply_markup=keyboard.as_markup(),
+                    parse_mode=enums.ParseMode.MARKDOWN_V2,
                 )
             return False
         else:

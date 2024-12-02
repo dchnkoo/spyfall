@@ -1,12 +1,13 @@
 from spy.decorators import with_user_cache, with_manager, create_user_or_update
+from spy.routers import group_only_msg_without_state, group_clear
 from spy.game import GameManager, GameStatus, GameRoom
-from spy.routers import group_only_msg_without_state
 from spy import filters as game_filters, texts
 from spy.commands import group
 
 from aiogram import filters, types, F, enums, Bot
 
 import typing as _t
+import asyncio
 
 if _t.TYPE_CHECKING:
     from database import TelegramUser
@@ -41,7 +42,7 @@ async def play(msg: types.Message, user: "TelegramUser", **_):
 )
 @with_manager
 async def start_playing(msg: types.Message, manager: GameManager, **_):
-    manager.cancel_current_task()
+    manager.tasks.cancel_current_task()
     await manager.room.delete_sended_messages()
     await manager.queue.put(GameStatus.playing)
 
@@ -103,7 +104,7 @@ def validate_entities(entities: list[types.MessageEntity]):
 @with_user_cache
 @with_manager
 async def vote_for_spy(
-    msg: types.Message, manager: GameManager, user: "TelegramUser", bot: Bot, **_
+    msg: types.Message, manager: GameManager, user: "TelegramUser", **_
 ):
     try:
         entity = msg.entities[1]
@@ -121,13 +122,25 @@ async def vote_for_spy(
         if suspected is None:
             await msg.answer(
                 await texts.YOU_CAN_VOTE_ONLY_FOR_USER_WHICH_IN_GAME(
-                    manager.room.language_code
-                )
+                    manager.room.language_code,
+                ),
+                parse_mode=enums.ParseMode.MARKDOWN_V2,
+            )
+            return
+
+        if suspected == user:
+            await msg.answer(
+                await texts.YOU_CANNOT_VOTE_FOR_YOUR_SELF(
+                    manager.room.language_code,
+                ),
+                parse_mode=enums.ParseMode.MARKDOWN_V2,
             )
             return
 
         async with manager.block_game_proccess():
-            ...
+            with manager.room.create_early_vote(author=user, suspected=suspected):
+                await manager.put_task(GameStatus.voting)
+                await manager.tasks.wait_until_current_task_complete()
     finally:
         await msg.delete()
 
@@ -145,7 +158,7 @@ async def end_the_game(msg: types.Message, manager: GameManager, **_):
     await manager.finish_game()
 
 
-@group_only_msg_without_state.message(
+@group_clear.message(
     game_filters.GameProccessFilter(),
 )
 async def cleaner(msg: types.Message):

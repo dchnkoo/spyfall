@@ -17,7 +17,7 @@ from utils.call_save import call_save
 from utils.no_skip import no_skip
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram import types, filters, F
+from aiogram import types, filters, F, enums
 
 import typing as _t
 import asyncio
@@ -41,7 +41,10 @@ async def add_role(
     await state.update_data(location_id=location_id)
 
     func = await handle_content_type_text(query)
-    await func(await texts.ENTER_ROLE_NAME(user.language))
+    await func(
+        await texts.ENTER_ROLE_NAME(user.language),
+        parse_mode=enums.ParseMode.MARKDOWN_V2,
+    )
 
 
 @call_save(
@@ -77,6 +80,7 @@ async def show_roles(query: types.CallbackQuery, user: "TelegramUser", **_):
         func = await handle_content_type_text(query)
         msg = await func(
             await texts.YOU_DOESNT_HAVE_ANY_ROLES(user.language),
+            parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
 
         if msg is not None:
@@ -115,7 +119,11 @@ async def show_roles(query: types.CallbackQuery, user: "TelegramUser", **_):
     )
 
     func = await handle_content_type_text(query)
-    await func(text=text, reply_markup=keyboard.as_markup())
+    await func(
+        text=text,
+        reply_markup=keyboard.as_markup(),
+        parse_mode=enums.ParseMode.MARKDOWN_V2,
+    )
 
 
 @private_only_msg_without_state.callback_query(
@@ -144,7 +152,11 @@ async def show_role(query: types.CallbackQuery, user: "TelegramUser", **_):
     text = (await texts.ROLE_INFO(user.language)).format(role=role)
 
     func = await handle_content_type_text(query)
-    await func(text=text, reply_markup=keyboard.as_markup())
+    await func(
+        text=text,
+        reply_markup=keyboard.as_markup(),
+        parse_mode=enums.ParseMode.MARKDOWN_V2,
+    )
 
 
 @private_only_msg_without_state.callback_query(

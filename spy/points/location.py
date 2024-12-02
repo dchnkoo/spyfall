@@ -16,7 +16,7 @@ from utils.call_save import call_save
 from utils.no_skip import no_skip
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram import types, filters, F
+from aiogram import types, filters, F, enums
 
 import typing as _t
 import asyncio
@@ -39,7 +39,10 @@ async def add_location(
     await state.set_state(fsm.LocationFSM.name)
     await state.update_data(package_id=package_id)
 
-    await query.message.edit_text(await texts.ENTER_LOCATION_NAME(user.language))
+    await query.message.edit_text(
+        await texts.ENTER_LOCATION_NAME(user.language),
+        parse_mode=enums.ParseMode.MARKDOWN_V2,
+    )
 
 
 @call_save(
@@ -57,7 +60,10 @@ async def handle_location_name(
     await state.update_data(name=message.text)
     await state.set_state(fsm.LocationFSM.image_url)
 
-    await message.answer(await texts.ENTER_LINK_ON_IMAGE_OR_SKIP(user.language))
+    await message.answer(
+        await texts.ENTER_LINK_ON_IMAGE_OR_SKIP(user.language),
+        parse_mode=enums.ParseMode.MARKDOWN_V2,
+    )
 
 
 @private_only_msg_without_state.callback_query(
@@ -72,7 +78,10 @@ async def show_locations(query: types.CallbackQuery, user: "TelegramUser", **_):
 
     if not locations:
         func = await handle_content_type_text(query)
-        msg = await func(await texts.YOU_DOES_NOT_HAVE_LOCATIONS(user.language))
+        msg = await func(
+            await texts.YOU_DOES_NOT_HAVE_LOCATIONS(user.language),
+            parse_mode=enums.ParseMode.MARKDOWN_V2,
+        )
 
         if isinstance(msg, types.Message):
             query = create_new_query(

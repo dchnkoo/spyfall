@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from .players import Player
 
-from functools import wraps
+from functools import wraps, partial
 
 from utils.exc import game as exc
 
@@ -40,7 +40,9 @@ class GameRoomMeta(type):
     async def load_by_user_id(cls, user_id: int):
         player = await Player.load_cached(user_id)
         manager = cls.get_room(player.room_id)
-        if manager is None:
+        if manager is None or (
+            manager is not None and manager.room.players.get(user_id) is None
+        ):
             await player.delete_cache()
         return manager
 
@@ -73,7 +75,7 @@ def task_error_handler(func):
         except Exception as e:
             logger.exception(e)
             await self.room.only_send_message(
-                await texts.SOMETHING_WRONG(self.room.language_code)
+                text=await texts.SOMETHING_WRONG(self.room.language_code)
             )
             await self.finish_game()
 
@@ -88,18 +90,108 @@ def on_status(s: GameStatus):
     return decorator
 
 
+class TasksHistory(list[asyncio.Task]):
+
+    @property
+    def current_task(self):
+        if len(self) > 0:
+            return self[-1]
+
+    @current_task.setter
+    def current_task(self, value: asyncio.Task):
+        assert isinstance(value, asyncio.Task)
+        self.insert(len(self), value)
+
+    @property
+    def previous_task(self):
+        if len(self) > 1:
+            return self[-2]
+
+    @property
+    def task_handler(self):
+        return self.get_task("task_handler")
+
+    @property
+    def play(self):
+        return self.get_task(GameStatus.playing)
+
+    @property
+    def recruitment(self):
+        return self.get_task(GameStatus.recruitment)
+
+    @property
+    def voting(self):
+        return self.get_task(GameStatus.voting)
+
+    def get_task(self, name: str):
+        for task in self:
+            if task.get_name() == name:
+                return task
+
+    def _exists(self, name: str):
+        for t in self:
+            if t.get_name() == name:
+                if t.done() is True:
+                    self.remove(t)
+                elif t.cancelled() is False or t.cancelling() < 1:
+                    return self.index(t)
+        return False
+
+    def append(self, task: asyncio.Task) -> None:
+        name = task.get_name()
+        if self._exists(name) is not False:
+            raise ValueError("You cannot add the same and not canceled task.")
+        super(TasksHistory, self).append(task)
+
+    def insert(self, index: _t.SupportsIndex, object: asyncio.Task) -> None:
+        if (indx := self._exists(object.get_name())) is not False:
+            del self[indx]
+        super(TasksHistory, self).insert(index, object)
+
+    def clear(self) -> None:
+        for task in self:
+            if task.cancelling() < 1 and task.cancelled() is False:
+                task.cancel()
+        super(TasksHistory, self).clear()
+
+    def create_task(
+        self,
+        manager: "GameManager",
+        task: _t.Callable[["GameManager"], _t.Coroutine],
+        name: str,
+    ):
+        if (t := self.get_task(name)) is not None:
+            if t.done() is False:
+                raise ValueError("Task already exist")
+        created = asyncio.create_task(task_error_handler(task)(manager), name=name)
+        self.append(created)
+        return created
+
+    def copy(self):
+        return self.__class__([i for i in self])
+
+    async def wait_until_current_task_complete(self):
+        if (task := self.current_task) is not None:
+            return await task
+
+    def cancel_current_task(self):
+        if (task := self.current_task) is not None:
+            task.cancel()
+
+
 class GameManager(metaclass=GameRoomMeta):
 
     meta = GameRoomMeta
 
     def __init__(self, room: GameRoom) -> None:
         global EVENT_HANDLERS
-        self._tasks = EVENT_HANDLERS
+        self._status_handlers = EVENT_HANDLERS
 
-        self.current_task: asyncio.Task | None = None
         self.queue = asyncio.Queue()
-
-        self.task_handler = asyncio.create_task(self.queue_handler())
+        self.tasks = TasksHistory()
+        self.task_handler = self.create_task(
+            GameManager.queue_handler, name="task_handler"
+        )
 
         self._game_blocked = False
         self._condition = asyncio.Condition()
@@ -112,13 +204,18 @@ class GameManager(metaclass=GameRoomMeta):
     def room(self):
         return self._room
 
-    @room.setter
-    def room(self, value: GameRoom):
-        raise ValueError("You cannot set new room to this manager.")
-
     @property
     def bot(self):
         return self.room.__bot__
+
+    @property
+    def game_blocked(self):
+        return self._game_blocked
+
+    @game_blocked.setter
+    def game_blocked(self, value: bool):
+        assert isinstance(value, bool)
+        self._game_blocked = value
 
     @property
     def current_round(self):
@@ -146,40 +243,33 @@ class GameManager(metaclass=GameRoomMeta):
 
     def set_status(self, s: GameStatus):
         assert (
-            self._game_blocked is False or not self.room.playing
+            self.game_blocked is True or not self.room.playing
         ), "Use block_game_proccess context manager."
         self.room.set_status(s)
-        task = self.get_task(status=s)
-        new_task = self._create_current_task(task, name=s + str(self.room.id))
+        task = self.get_status_handler(status=s)
+        new_task = self.create_task(task, name=s)
         return new_task
 
     @property
     def previous_status(self):
         return self.room.previous_status
 
-    def get_task(self, status: GameStatus):
-        task = self._tasks.get(status)
-        assert task is not None, "Any task not found."
-        return task
+    def get_status_handler(self, status: GameStatus):
+        handler = self._status_handlers.get(status)
+        assert handler is not None, "Any status handler not found."
+        return handler
 
     @classmethod
     async def register(cls, room: GameRoom):
         return await cls.meta.register(room=room)
 
-    def _create_current_task(
-        self, task: _t.Callable[["GameManager"], _t.Coroutine], **kw
-    ):
-        new_task = asyncio.create_task(task_error_handler(task)(self), **kw)
-        self.current_task = new_task
-        return new_task
+    @property
+    def create_task(self):
+        return partial(self.tasks.create_task, self)
 
-    async def wait_until_current_task_complete(self):
-        if (task := self.current_task) is not None:
-            return await task
-
-    def cancel_current_task(self):
-        if (task := self.current_task) is not None:
-            task.cancel()
+    async def put_task(self, event: GameStatus):
+        await self.queue.put(event)
+        await asyncio.sleep(0.2)
 
     async def queue_handler(self):
         while True:
@@ -187,6 +277,9 @@ class GameManager(metaclass=GameRoomMeta):
                 status = await self.queue.get()
             except asyncio.CancelledError:
                 break
+            assert (
+                status in GameStatus
+            ), f"You provided to queue not GameStatus: {type(status)} - {status}"
             self.set_status(status)
 
     def clear_queue(self):
@@ -203,7 +296,6 @@ class GameManager(metaclass=GameRoomMeta):
         await self.room.send_message(
             await texts.RECRUITMENT_MESSAGE(self.room.language_code),
             reply_markup=await self.room.recruitment_join_button(),
-            parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
         await self.room.display_players_in_join_message()
 
@@ -224,7 +316,7 @@ class GameManager(metaclass=GameRoomMeta):
 
             text = text.replace(i, str(recruitment_time))
 
-            await message.edit_text(text)
+            await message.edit_text(text, parse_mode=enums.ParseMode.MARKDOWN_V2)
 
         await self.room.delete_sended_messages()
         await self.queue.put(GameStatus.playing)
@@ -241,38 +333,89 @@ class GameManager(metaclass=GameRoomMeta):
                 (self.room.game_settings.round_time.seconds + 10) // 60,
                 self.room.game_settings.rounds,
             ),
-            parse_mode=enums.ParseMode.MARKDOWN,
         )
 
         while (round := self.round) < self.room.game_settings.rounds:
             await self.room.notify_users_about_roles()
-            await self.room.notify_about_time_to_the_end_of_round()
             await self.room.notify_about_round()
+            await self.room.notify_about_time_to_the_end_of_round()
             await self.room.send_ask_question_msg()
 
-            await asyncio.wait_for(
-                self.round_event.wait(),
-                timeout=self.room.time_to_end_of_round_in_seconds,
-            )
-            async with self._condition:
-                await self._condition.wait_for(lambda: self._game_blocked is False)
+            try:
+                await asyncio.wait_for(
+                    self.round_event.wait(),
+                    timeout=self.room.time_to_end_of_round_in_timedelta.seconds,
+                )
+            except asyncio.TimeoutError:
+                pass
 
+            async with self._condition:
+                await self._condition.wait_for(lambda: self.game_blocked is False)
+
+            await self.room.players.set_status("in_game")
             await self.room.send_round_results(round)
             await self.room.redefine_location_and_roles()
         else:
             raise exc.FinishGame()
 
+    @on_status(GameStatus.voting)
+    async def voting(self):
+        message, reply_murkup = self.room.vote_message()
+        vote = self.room.vote
+
+        msg = await self.room.send_message(
+            text=(await message(self.room.language_code)).format(
+                vote.author.mention_markdown(), vote.suspected.mention_markdown()
+            ),
+            reply_markup=reply_murkup,
+        )
+
+        await asyncio.sleep(spygame.early_vote_time)
+
+        await msg.delete()
+
+        vote_result = self.room.vote_results()
+        assert isinstance(
+            vote_result, bool
+        ), "In Early vote results need to be boolean."
+
+        if vote_result:
+            if not vote.suspected.is_spy:
+                self.room.players.in_game.spies.increase_score(2)
+                await self.room.send_unsuccessfully_early_voting_msg()
+            else:
+                [
+                    player.increase_scrore(1)
+                    for player in vote.voted
+                    if vote.voted[player]
+                ]
+                await self.room.send_successfully_early_voting_msg()
+            await vote.suspected.set_stauts("kicked")
+        if vote.suspected.is_spy:
+            vote.author.score += 1
+
+        if (
+            self.room.game_settings.two_spies
+            and len(self.room.players.in_game.spies) == 1
+        ):
+            minutes, _ = self.room.time_to_end_of_round_in_minutes_and_seconds
+            if minutes > 1:
+                await self.room.send_message(
+                    await texts.CONTINUE_THE_ROUND(self.room.language_code)
+                )
+                await self.room.notify_about_time_to_the_end_of_round()
+                return
+        await self.go_to_next_round()
+
     async def finish_game(self):
         self.meta.remove_room(self.room.id)
         self.clear_queue()
-        self.task_handler.cancel()
         self.rounds.close()
 
         self.room.set_status(GameStatus.end)
         await self.room.finish_game()
 
-        self.cancel_current_task()
-        del self
+        self.tasks.clear()
 
     async def go_to_next_round(self):
         self.round_event.set()
@@ -283,13 +426,15 @@ class GameManager(metaclass=GameRoomMeta):
     async def block_game_proccess(self):
         assert self.room.playing
 
-        self._game_blocked = True
-        game_task = self.current_task
+        self.game_blocked = True
 
         async with self._condition:
             yield
-            self._game_blocked = False
+            self.game_blocked = False
             self._condition.notify_all()
 
+        if not (game_task := self.tasks.play):
+            raise exc.Exit()
+
+        self.tasks.current_task = game_task
         self.room.set_status(GameStatus.playing)
-        self.current_task = game_task

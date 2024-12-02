@@ -4,13 +4,12 @@ from contextlib import asynccontextmanager
 from functools import partial
 
 from aiogram.utils.chat_action import ChatActionSender
+from aiogram.enums import ChatAction, ParseMode
 from aiogram import Bot, types, exceptions
 from aiogram.client.default import Default
-from aiogram.enums import ChatAction
 
 import pydantic as _p
 import typing as _t
-import json
 
 
 def save_sended[
@@ -162,6 +161,7 @@ class ChatModel(ABC, _p.BaseModel):
         return partial(
             self.__bot__.send_message,
             chat_id=self.chat_id,
+            parse_mode=ParseMode.MARKDOWN_V2,
         )
 
     @save_sended
@@ -170,7 +170,7 @@ class ChatModel(ABC, _p.BaseModel):
         text: str,
         business_connection_id: _t.Optional[str] = None,
         message_thread_id: _t.Optional[int] = None,
-        parse_mode: _t.Optional[_t.Union[str, Default]] = Default("parse_mode"),
+        parse_mode: _t.Optional[_t.Union[str, Default]] = ParseMode.MARKDOWN_V2,
         entities: _t.Optional[list[types.MessageEntity]] = None,
         link_preview_options: _t.Optional[
             _t.Union[types.LinkPreviewOptions, Default]
@@ -226,7 +226,7 @@ class ChatModel(ABC, _p.BaseModel):
         business_connection_id: _t.Optional[str] = None,
         message_thread_id: _t.Optional[int] = None,
         caption: _t.Optional[str] = None,
-        parse_mode: _t.Optional[_t.Union[str, Default]] = Default("parse_mode"),
+        parse_mode: _t.Optional[_t.Union[str, Default]] = ParseMode.MARKDOWN_V2,
         caption_entities: _t.Optional[list[types.MessageEntity]] = None,
         show_caption_above_media: _t.Optional[_t.Union[bool, Default]] = Default(
             "show_caption_above_media"

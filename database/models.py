@@ -1,3 +1,4 @@
+from aiogram.utils.markdown import markdown_decoration
 from aiogram.types import User
 
 from urllib.parse import urlparse
@@ -16,7 +17,6 @@ from . import enums, bases
 import sqlmodel as _sql
 import pydantic as _p
 import typing as _t
-import json
 
 
 model_config = _p.ConfigDict(
@@ -29,7 +29,15 @@ model_config = _p.ConfigDict(
 )
 
 
-class TelegramUserModel(User, ChatModel, CacheModel[int]):
+class BaseModel(_p.BaseModel):
+    model_config = model_config
+
+    @staticmethod
+    def markdown_string(field: str):
+        return markdown_decoration.quote(field)
+
+
+class TelegramUserModel(BaseModel, User, ChatModel, CacheModel[int]):
     model_config = model_config
 
     db: _t.ClassVar[int] = redis.users_db
@@ -37,6 +45,21 @@ class TelegramUserModel(User, ChatModel, CacheModel[int]):
     cache_live_time: _t.ClassVar[int] = 2 * 24 * 60 * 60
 
     id: int = _sql.Field(sa_type=_sql.BigInteger, primary_key=True)
+
+    @property
+    def escaped_first_name(self):
+        return self.markdown_string(self.first_name)
+
+    @property
+    def escaped_last_name(self):
+        if self.last_name:
+            return self.markdown_string(self.last_name)
+
+    @property
+    def escaped_full_name(self):
+        if self.last_name:
+            return f"{self.escaped_first_name} {self.escaped_last_name}"
+        return self.escaped_first_name
 
     @property
     def cache_identity(self):
@@ -66,11 +89,13 @@ class TelegramUserModel(User, ChatModel, CacheModel[int]):
         return hash(self.id)
 
 
-class PackageModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
-    model_config = model_config
-
+class PackageModel(BaseModel, bases.Name, bases.PrimaryKey):
     scope: enums.PackageScope = enums.PackageScope.PRIVATE
     type: enums.PackageType = enums.PackageType.USER
+
+    @property
+    def escaped_name(self):
+        return self.markdown_string(self.name)
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -82,10 +107,13 @@ class PackageModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
         return self.name == other.name
 
 
-class LocationModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
-    model_config = model_config
+class LocationModel(BaseModel, bases.Name, bases.PrimaryKey):
 
     image_url: _t.Optional[str] = None
+
+    @property
+    def escaped_name(self):
+        return self.markdown_string(self.name)
 
     @_p.field_validator("image_url", mode="before")
     @classmethod
@@ -101,10 +129,12 @@ class LocationModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
 
         async with async_request_session() as client:
             res = await client.get(url)
-            assert res.status_code == 200
+            if res.status_code != 200:
+                return False
 
         content_type: str = res.headers.get("content-type", None)
-        assert content_type is not None
+        if content_type is None:
+            return False
         return content_type.startswith("image")
 
     def __eq__(self, other: "LocationModel") -> bool:
@@ -117,11 +147,20 @@ class LocationModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
         return hash(self.name)
 
 
-class RoleModel(_p.BaseModel, bases.Name, bases.PrimaryKey):
-    model_config = model_config
+class RoleModel(BaseModel, bases.Name, bases.PrimaryKey):
 
     description: _t.Optional[str] = None
     _is_spy: bool = _p.PrivateAttr(default=False)
+
+    @property
+    def escaped_name(self):
+        return self.markdown_string(self.name)
+
+    @property
+    def escaped_description(self):
+        if self.description:
+            return self.markdown_string(self.description)
+        return ""
 
     @_p.computed_field
     @property

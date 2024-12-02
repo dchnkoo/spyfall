@@ -2,11 +2,13 @@ from database import Settings, TelegramUser, Location, Package, Role
 
 from .players import Player, PlayersCollection
 
-from caching import CachePrefix
+from .vote import EarlyVote, SummaryVote, Vote
 
 from utils.translate import LanguageCode
 from utils.chat.model import ChatModel
 from utils.exc import game as exc
+
+from contextlib import contextmanager
 
 from functools import wraps
 
@@ -78,6 +80,7 @@ class GameRoom(ChatModel):
     package: _t.Optional[Package] = None
     location: _t.Optional[Location] = None
     status: GameStatus = GameStatus.recruitment
+    vote: _t.Optional[EarlyVote | SummaryVote] = None
     status_history: list[GameStatus] = _p.Field(default_factory=list)
     players: PlayersCollection = _p.Field(default_factory=PlayersCollection)
 
@@ -97,6 +100,10 @@ class GameRoom(ChatModel):
         return self.status == GameStatus.recruitment
 
     @property
+    def voting(self):
+        return self.status == GameStatus.voting
+
+    @property
     def current_round(self):
         return self._current_round
 
@@ -114,12 +121,17 @@ class GameRoom(ChatModel):
         return self._end_of_round
 
     @property
-    def time_to_end_of_round_in_seconds(self):
-        return (self.time_to_end_of_round - now_utc()).seconds
+    def time_to_end_of_round_in_timedelta(self):
+        return self.time_to_end_of_round - now_utc()
 
     @property
-    def time_to_end_of_round_in_minutes(self):
-        return (self.time_to_end_of_round_in_seconds + 10) // 60
+    def time_to_end_of_round_in_seconds(self):
+        return self.time_to_end_of_round_in_timedelta.seconds
+
+    @property
+    def time_to_end_of_round_in_minutes_and_seconds(self):
+        seconds = self.time_to_end_of_round_in_seconds
+        return (seconds // 60, seconds % 60)
 
     @property
     def key(self):
@@ -174,7 +186,6 @@ class GameRoom(ChatModel):
 
         await player.send_message(
             text=text.format(link),
-            parse_mode=enums.ParseMode.MARKDOWN_V2,
             link_preview_options=types.LinkPreviewOptions(is_disabled=True),
         )
 
@@ -182,9 +193,9 @@ class GameRoom(ChatModel):
         text = (await texts.RESULTS_PREV_ROUND(self.language_code)).format(round)
 
         for player in self.players:
-            text += "\n\t" + player.mention_markdown() + " - " + str(player.score)
+            text += "\n\t" + player.mention_markdown() + " \\- " + str(player.score)
 
-        await self.send_message(text=text, parse_mode=enums.ParseMode.MARKDOWN_V2)
+        await self.send_message(text=text)
 
     async def send_winners(self):
         winners = self.players.max_score
@@ -196,7 +207,7 @@ class GameRoom(ChatModel):
         text = await texts.WINNERS(self.language_code)
         for player in winners:
             text += "\n\t" + player.mention_markdown() + " - " + str(player.score)
-        await self.send_message(text=text, parse_mode=enums.ParseMode.MARKDOWN_V2)
+        await self.send_message(text=text)
 
     async def notify_about_round(self):
         await self.send_message(
@@ -204,15 +215,10 @@ class GameRoom(ChatModel):
         )
 
     async def notify_about_time_to_the_end_of_round(self):
-        seconds = self.time_to_end_of_round_in_seconds
+        minutes, seconds = self.time_to_end_of_round_in_minutes_and_seconds
 
         text = texts.TO_END_OF_ROUND_REMAINS
-        if seconds > 120:
-            text = text.replace("seconds", "minutes")
-            seconds = self.time_to_end_of_round_in_minutes
-
-        text = (await text(self.language_code)).format(seconds)
-
+        text = (await text(self.language_code)).format(minutes, seconds)
         await self.send_message(text=text)
 
     async def recruitment_link(self):
@@ -265,14 +271,12 @@ class GameRoom(ChatModel):
             (await texts.THE_SECOND_SPY_IS(first_spy.language)).format(
                 player=second_spy
             ),
-            parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
 
         await second_spy.send_message(
             (await texts.THE_SECOND_SPY_IS(second_spy.language)).format(
                 player=first_spy
             ),
-            parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
 
     async def choose_game_package(self) -> None:
@@ -417,7 +421,6 @@ class GameRoom(ChatModel):
             (await texts.ASK_QUESTION_MSG(self.language_code)).format(
                 cur_player_link, qiestion_to_player_link
             ),
-            parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
 
     async def redefine_game_players(self, player: Player):
@@ -436,7 +439,7 @@ class GameRoom(ChatModel):
                 continue
 
     async def send_error_msg_and_finish_game(self, text: str):
-        await self.__bot__.send_message(self.chat_id, text=text)
+        await self.only_send_message(text=text)
         raise exc.GameEnd()
 
     async def check_room(self):
@@ -496,5 +499,57 @@ class GameRoom(ChatModel):
                 )
             await player.send_message(
                 await texts.PLAYER_LEFT_GAME.format("You")(self.language_code),
-                parse_mode=enums.ParseMode.MARKDOWN_V2,
             )
+
+    def vote_message(self):
+        assert self.vote is not None, "You need to init voting first."
+        return self.vote.vote_message()
+
+    @contextmanager
+    def vote_manager(self, vote: Vote):
+        assert self.vote is None, f"You need to finish {type(self.vote)} as first."
+        self.vote = vote
+        yield
+        self.vote = None
+
+    @contextmanager
+    def create_summary_vote(self):
+        vote = SummaryVote.create_vote(self.players)
+        with self.vote_manager(vote):
+            yield vote
+
+    @contextmanager
+    def create_early_vote(self, author: Player | TelegramUser, suspected: Player):
+        if isinstance(author, TelegramUser):
+            author = self.players.get(author.id)
+        vote = EarlyVote.create_vote(author=author, suspected=suspected)
+        with self.vote_manager(vote):
+            yield vote
+
+    def vote_results(self) -> bool | Player:
+        assert self.vote is not None, "Vote doesn't exitsts."
+        return self.vote.results(self.players.in_game)
+
+    async def send_successfully_early_voting_msg(self):
+        assert isinstance(
+            self.vote, EarlyVote
+        ), "Voting need to be early for that action."
+        assert (
+            self.vote_results() is True and self.vote.suspected.is_spy
+        ), "Voting wasn't successful, you cannot send that message"
+        await self.send_message(
+            (await texts.SUCCESSFULY_EARLY_VOTING(self.language_code)).format(
+                self.vote.author.mention_markdown()
+            ),
+        )
+
+    async def send_unsuccessfully_early_voting_msg(self):
+        assert isinstance(
+            self.vote, EarlyVote
+        ), "Voting need to be early for that action."
+        assert (
+            self.vote_results() is True and not self.vote.suspected.is_spy
+        ), "Voting wasn't unsuccessful, you cannot send that message"
+        await self.send_message(
+            await texts.NOT_SUCCESSFULY_EARLY_VOTING(self.language_code)
+        )

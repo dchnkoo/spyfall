@@ -27,7 +27,7 @@ ADDED_SUCCESSFULY_SOME = TranslateStr("{some} added successfully!")
 
 START_MSG = TranslateStr(
     """
-Hello, {user.full_name}! 🎉
+Hello, {user.escaped_full_name}! 🎉
 
 Welcome to the game "Spyfall"! 🕵️‍♂️ This bot will be your game host, making it easy to organize and play with your friends anytime. Just add me to a chat, and let’s get started!
 
@@ -117,7 +117,7 @@ INFO_PACKAGES = TranslateStr(
 
 INFO_PACKAGE = TranslateStr(
     """
-Package name: {package.name} 📦
+Package name: {package.escaped_name} 📦
 
 Number of locations: {} 📍
 """
@@ -148,7 +148,7 @@ DELETE_SOME = TranslateStr("Delete {some} 🗑")
 DELETE_PACKAGE = DELETE_SOME.format(some="package")
 
 
-SELECT_GAME_PACKAGE = TranslateStr("Select the game package. 📦")
+SELECT_GAME_PACKAGE = TranslateStr("Select the game package 📦")
 
 
 ADD_SOME = TranslateStr("Add {some}")
@@ -230,14 +230,14 @@ SELECT_LOCATION_FOR_ROLE = TranslateStr(
 
 INFO_LOCATION = TranslateStr(
     """
-Location: {location.name} 📍
+Location: {location.escaped_name} 📍
 
 Roles: {} 👤
 """
 )
 
 
-CHOOSE_GAME_LOCATIONS = TranslateStr("Choose locations for the game. 📍")
+CHOOSE_GAME_LOCATIONS = TranslateStr("Choose locations for the game 📍")
 
 
 YOU_PROVIDED_NOT_VALID_IMAGE = TranslateStr(
@@ -303,7 +303,7 @@ YOU_DOESNT_HAVE_ANY_ROLES = YOU_DOESNT_HAVE_ANY.format(some="roles")
 
 ROLES_INFO = TranslateStr(
     """
-Location: {location.name} 📍
+Location: {location.escaped_name} 📍
 
 Number of roles: {} 👤
 """
@@ -315,14 +315,14 @@ DELETE_ROLE = DELETE_SOME.format(some="role")
 
 ROLE_INFO = TranslateStr(
     """
-Role: {role.name} 👤
+Role: {role.escaped_name} 👤
 
-Description: {role.description}
+Description: {role.escaped_description}
 """
 )
 
 
-CHOOSE_GAME_ROLES = TranslateStr("Choose roles for the game. 👤")
+CHOOSE_GAME_ROLES = TranslateStr("Choose roles for the game 👤")
 
 
 YOU_NEED_ADD_ROLES_FOR_LOCATION_TO_CHOOSE = TranslateStr(
@@ -388,14 +388,14 @@ Current time: {time} minute(s) ⏱
 
 TIME_ERROR = TranslateStr(
     f"""
-You cannot set round duration less than {spygame.min_round_time} and more than {spygame.max_round_time} minute(s).
+You cannot set round duration less than {spygame.min_round_time} and more than {spygame.max_round_time} minute(s)
 """
 )
 
 
 TIME_EDITED = TranslateStr(
     """
-Round duration edited successfully! ✅
+Round duration edited successfully ✅
 """
 )
 
@@ -411,14 +411,14 @@ Current number of rounds: {rounds} 🎲
 
 ROUNDS_ERROR = TranslateStr(
     f"""
-You cannot set less than {spygame.min_rounds} and more than {spygame.max_rounds} round(s).
+You cannot set less than {spygame.min_rounds} and more than {spygame.max_rounds} round(s)
 """
 )
 
 
 ROUNDS_EDITED = TranslateStr(
     """
-Number of rounds edited successfully! ✅
+Number of rounds edited successfully ✅
 """
 )
 
@@ -450,13 +450,13 @@ SPIES_CONFIGURE_EXPLAIN = TranslateStr(
 
 NOTIFY_USER_ABOUT_ROLE = TranslateStr(
     """
-Your role: {role.name} 👤
-Role description: {role.description}
+Your role: {role.escaped_name} 👤
+Role description: {role.escaped_description}
 """
 )
 
 
-NOTIFY_ABOUT_LOCATION = TranslateStr("Location: {location.name} 📍")
+NOTIFY_ABOUT_LOCATION = TranslateStr("Location: {location.escaped_name} 📍")
 
 
 YOU_ALREADY_IN_GAME = TranslateStr("You already in game.")
@@ -505,7 +505,9 @@ Rounds: {} 🎯
 BEGIN_ROUND = TranslateStr("Begin of {} round!")
 
 
-TO_END_OF_ROUND_REMAINS = TranslateStr("The end of the round remains {} seconds")
+TO_END_OF_ROUND_REMAINS = TranslateStr(
+    "To the end of the round remains in {} mintes {} seconds."
+)
 
 
 GAME_ENDED = TranslateStr(
@@ -516,21 +518,21 @@ GAME_ENDED = TranslateStr(
 
 
 RECRUITMENT_MESSAGE = TranslateStr(
-    r"""
-🎲 *The game is starting\!* 🎲
-We are now recruiting players to join the game\. You have *1 minute* to join\!
+    """
+🎲 *The game is starting!* 🎲
+We are now recruiting players to join the game. You have *1 minute* to join!
 
-🔹 To join the game, click the button below or type `/join`\.
-🔹 To leave the game, use `/leave`\.
+🔹 To join the game, click the button below or type `/join`.
+🔹 To leave the game, use `/leave`.
 
-📢 Invite your friends — the more players, the more fun\!
-⌛ *The timer is ticking\.\.\. The game will begin in 1 minute\!*
+📢 Invite your friends — the more players, the more fun!
+⌛ *The timer is ticking... The game will begin in 1 minute!*
 """
 )
 
 
 GAME_STARTED = TranslateStr(
-    r"""
+    """
 🔥 *The game has begun!* 🔥
 
 🔍 *Here’s how it works:*
@@ -555,10 +557,10 @@ Questions should help uncover the Spy without revealing too much about the locat
 )
 
 
-JOIN_TO_THE_GAME = TranslateStr("Join to the game! 🕵️‍♂️")
+JOIN_TO_THE_GAME = TranslateStr("Join to the game 🕵️‍♂️")
 
 
-RECRUITMENT_WILL_END = TranslateStr("Recruitment will end in {} seconds..")
+RECRUITMENT_WILL_END = TranslateStr("Recruitment will end in {} seconds")
 
 
 DISPLAY_PLAYERS = TranslateStr("*In game:*\n\n{}\n\n*Total:* {}")
@@ -608,14 +610,15 @@ YOU_JOINED_TO_THE_GAME = TranslateStr("You joined to the [game]({})")
 
 
 ASK_QUESTION_MSG = TranslateStr(
-    r"""
-*🔄 Next turn in the "Spyfall" game\!*
-🔍 *{}*, it’s your turn\!
-Ask a question to *{}*\.
+    """
+*🔄 Next turn in the "Spyfall" game!*
+🔍 *{}*, it’s your turn!
+Ask a question to *{}*.
 
 🎙️ *Example question:*
 _"What are you doing here?"_ or _"What does this place look like?"_
 """
+    + f"\nAfter pass the turn to the next player /{group.next.command}"
 )
 
 
@@ -644,7 +647,7 @@ NOT_ENOUGH_TO_DISTRIBUTE = TranslateStr(
 )
 
 
-PLAYER_LEFT_GAME = TranslateStr("{} quit from game ⚠️")
+PLAYER_LEFT_GAME = TranslateStr("{} left the game ⚠️")
 
 
 NO_SPIES_FOR_CONTINUE = TranslateStr("No spies to continue the game.")
@@ -659,10 +662,49 @@ NOT_ENOUGH_PLAYERS_TO_CONTINUE = TranslateStr(
 
 
 NOT_CORRECT_MENTION_FOR_VOTE = TranslateStr(
-    f"Incorrect user mention for voting for him\.\n\nUse `/{group.vote.command} @suspected_username`"
+    f"Incorrect user mention for voting for him.\n\nUse `/{group.vote.command} @suspected_username`"
 )
 
 
 YOU_CAN_VOTE_ONLY_FOR_USER_WHICH_IN_GAME = TranslateStr(
     "You cannot vote for users which currently not in that game."
+)
+
+
+YOU_CANNOT_VOTE_FOR_YOUR_SELF = TranslateStr("You cannot vote for your self")
+
+
+EARLY_VOTE = TranslateStr(
+    "🗣 {} thinks the {} is spy 🕵️‍♂️. If you agree vote below 📥"
+    + f"\n\nYou have {spygame.early_vote_time} seconds to vote."
+)
+
+
+SUMMARY_VOTING_MSG = TranslateStr(
+    """
+And so the round has come to an end and you need to vote for the player you think or suspect is a spy, you have 3 minutes to discuss among yourselves and vote.
+
+Once you have cast your vote, it will no longer be possible to cancel it! ⚠️
+"""
+)
+
+
+VOTE_FOR_SPY = TranslateStr("Vote for spy! 🕵🏻‍♂️")
+
+
+YOU_ARE_NOT_IN_GAME = TranslateStr("You are not in game.")
+
+
+SUCCESSFULY_EARLY_VOTING = TranslateStr(
+    "Successfully early voting! Players win that round and every who voted per spy player get the one point, also {} get one bonus point beacause he's was detect the spy!"
+)
+
+
+NOT_SUCCESSFULY_EARLY_VOTING = TranslateStr(
+    "Unsuccessfully early voting, you all voted for not spy player. Every spy player who still in game will receive two points."
+)
+
+
+CONTINUE_THE_ROUND = TranslateStr(
+    "There is one more spy left in the game and you have time to try to find him and get more points for this round."
 )

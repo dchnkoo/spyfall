@@ -14,8 +14,9 @@ from utils.no_skip import no_skip
 
 from database import Package
 
+from aiogram.utils.markdown import markdown_decoration
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram import filters, types, F
+from aiogram import filters, types, F, enums
 
 import typing as _t
 import uuid
@@ -50,7 +51,9 @@ async def handle_package_name(
 
     if (name := msg.text) in set(packages):
         await user.send_message(
-            (await texts.PACKAGE_ALREADY_EXISTS(user.language)).format(name=name)
+            (await texts.PACKAGE_ALREADY_EXISTS(user.language)).format(
+                name=markdown_decoration.quote(name)
+            )
         )
         return
 
@@ -141,7 +144,11 @@ async def show_package(msg: types.CallbackQuery, user: "TelegramUser", **_):
     text = (await texts.INFO_PACKAGE(user.language)).format(
         number_of_locations, package=package
     )
-    await msg.message.edit_text(text=text, reply_markup=keyboard.as_markup())
+    await msg.message.edit_text(
+        text=text,
+        reply_markup=keyboard.as_markup(),
+        parse_mode=enums.ParseMode.MARKDOWN_V2,
+    )
 
 
 @private_only_msg_without_state.callback_query(
@@ -154,5 +161,8 @@ async def delete_package(msg: types.CallbackQuery, user: "TelegramUser", **_):
     await Package.remove_by_id(package_id)
 
     text = await texts.PACKAGE_WAS_DELETED(user.language)
-    await msg.message.edit_text(text)
+    await msg.message.edit_text(
+        text,
+        parse_mode=enums.ParseMode.MARKDOWN_V2,
+    )
     await show_packages(msg)

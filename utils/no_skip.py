@@ -1,7 +1,7 @@
 from spy.commands import private
 from spy import texts
 
-from aiogram import types, filters, Router
+from aiogram import types, filters, Router, enums
 
 
 def no_skip(router: Router, *f):
@@ -11,7 +11,8 @@ def no_skip(router: Router, *f):
         await message.answer(
             await texts.YOU_CANNOT_SKIP_THAT_ACTION(
                 message.from_user.language_code or "en"
-            )
+            ),
+            parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
         return
 
@@ -26,7 +27,8 @@ def freeze_action(router: Router, *f):
         await message.answer(
             await texts.YOU_CANNOT_SKIP_THAT_ACTION(
                 message.from_user.language_code or "en"
-            )
+            ),
+            parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
         return
 
