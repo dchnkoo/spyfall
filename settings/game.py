@@ -32,3 +32,5 @@ class SpyGame(BaseSettings):
     summmary_vote_time: int = 120
 
     resend_summary_vote_msg_after: int = 15
+
+    guess_location_time: int = 120

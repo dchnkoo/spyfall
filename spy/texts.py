@@ -69,6 +69,8 @@ SKIPED_ACTION = TranslateStr("Action was skipped.")
 
 CANCELED_ACTION = TranslateStr("Action was canceled.")
 
+CANCEL = TranslateStr("Cancel")
+
 
 YOU_CANNOT_SKIP_THAT_ACTION = TranslateStr("You cannot skip that action.")
 
@@ -742,4 +744,71 @@ SUCCESSFULLY_SUMMARY_VOTE = TranslateStr(
 
 UNSUCCESSFULLY_SUMMARY_VOTE = TranslateStr(
     "{} wasnt a spy, only spy players will get the 2 points each in that round."
+)
+
+
+YOU_CAN_USE_THAT_COMMAND_ONLY_IF_YOU_SPY = TranslateStr(
+    "You can use that command only if you spy."
+)
+
+
+WANRING_GUESS_MESSAGE = TranslateStr(
+    f"""
+*⚠️ WARNING*
+
+If you continue all players will know you're spy 🕵️‍♂️
+
+To continue click on button below, you'll have {spygame.guess_location_time // 60} minutes to guess the location or cancel and try later.
+"""
+)
+
+
+CONTINUE = TranslateStr("Continue")
+
+
+NOTIFY_USERS_ABOUT_SPY = TranslateStr(
+    """
+{} was a spy! And maybe he understand what location it was, now he'll try to guess her.
+
+If he guess he get 2 points and players will lose that round. If you play with two spies and they know each other, both will get two points if one of then guess the location, in oposite situation all players will get 1 point and we'll go to another round.
+"""
+)
+
+
+TRY_TO_GUESS = TranslateStr(
+    "Try to guess, click on location which you think used now in game, if you pick correct location you get two points in another way you get nothing and lose that round."
+)
+
+
+YOU_SUCCESSFULLY_GUESS_LOCATION = TranslateStr(
+    "*You guessed location and get two points! 🎉*"
+)
+
+
+YOU_UNSUCCESSFULLY_GUESS_LOCATION = TranslateStr(
+    "You're not guessed location. Spies lose that round."
+)
+
+
+SUCCESSFULLY_GUESS_LOCATION = TranslateStr(
+    """
+_{} guessed location {}_, he get 2 points! Players lose that round 👀
+
+__If you use two spies and they know each other second spy too get 2 points.__
+"""
+)
+
+
+UNSUCCESSFULLY_GUESS_LOCATION = TranslateStr(
+    "{} doesn't guessed location. Spies lose that round! Every non-spy player will get 1 point!"
+)
+
+
+NOT_GUESS_LOCATION_IN_TIME = TranslateStr(
+    "{} doesn't guessed location in time and spies lose that round, every non-spy player will get one point!"
+)
+
+
+YOU_DOESNT_GUESS_LOCATION_IN_TIME = TranslateStr(
+    "You doesn't guessed location in time and lose that round."
 )

@@ -17,15 +17,14 @@ class GameProccessFilter(filters.Filter):
         self.by_user_id = by_user_id
 
     async def __call__(self, msg: types.Message | types.CallbackQuery, *args, **kwds):
-        msg = extract_message(msg)
-
+        message = extract_message(msg)
         if self.by_user_id:
             try:
                 manager = await GameManager.meta.load_by_user_id(msg.from_user.id)
             except AssertionError:
                 return False
         else:
-            manager = GameManager.meta.get_room(msg.chat.id)
+            manager = GameManager.meta.get_room(message.chat.id)
 
         if manager is None:
             return False
@@ -73,11 +72,13 @@ class PlayerFilter(filters.Filter):
         is_creator: bool = False,
         is_current: bool = False,
         is_question_to: bool = False,
+        is_spy: bool = False,
     ) -> None:
         self.status = status
         self.is_creator = is_creator
         self.is_current = is_current
         self.is_question_to = is_question_to
+        self.is_spy = is_spy
 
     async def __call__(self, message: types.Message | types.CallbackQuery, **_):
         user_id = message.from_user.id
@@ -112,8 +113,9 @@ class PlayerFilter(filters.Filter):
                 else False
             )
         )
+        is_spy = True if not self.is_spy else player.is_spy
 
-        return status and is_creator and is_current and is_question_to
+        return status and is_creator and is_current and is_question_to and is_spy
 
 
 class ChatMemberIsAdmin(filters.Filter):

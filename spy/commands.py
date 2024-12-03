@@ -10,6 +10,9 @@ class Commands:
 
 class PrivateCommands(Commands):
     start = BotCommand(command="start", description="Start bot 💬")
+    guess_location = BotCommand(
+        command="guess_location", description="Guess location if you a spy 🕵️‍♂️"
+    )
     create_package = BotCommand(
         command="create_package", description="Create your own package 📦"
     )
@@ -32,7 +35,7 @@ private = PrivateCommands()
 
 
 class GroupCommands(Commands):
-    next = BotCommand(command="next", description="Pass the turn to another player 📨")
+    next = BotCommand(command="next", description="Pass turn to another player 📨")
     play = BotCommand(command="play", description="Start the recruitment to game! 🎲")
     start_playing = BotCommand(
         command="start_playing", description="End recruitment and start play 🎮"

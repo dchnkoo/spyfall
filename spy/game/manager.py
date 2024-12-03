@@ -12,8 +12,10 @@ from settings import spygame
 
 from loguru import logger
 
-from aiogram import enums
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram import enums, types
 
+from spy.callback import CallbackPrefix
 from spy import texts
 
 import typing as _t
@@ -65,9 +67,9 @@ EVENT_HANDLERS: dict[GameStatus, _t.Callable[["GameManager"], _t.Coroutine]] = {
 
 def task_error_handler(func):
     @wraps(func)
-    async def wrapper(self: "GameManager"):
+    async def wrapper(self: "GameManager", *args, **kwargs):
         try:
-            return await func(self)
+            return await func(self, *args, **kwargs)
         except asyncio.CancelledError:
             return
         except exc.GameException as e:
@@ -127,6 +129,10 @@ class TasksHistory(list[asyncio.Task]):
     def summary_voting(self):
         return self.get_task(GameStatus.summary_vote)
 
+    @property
+    def guess_location(self):
+        return self.get_task(GameStatus.guess_location)
+
     def get_task(self, name: str):
         for task in self[::-1]:
             if task.get_name() == name:
@@ -162,12 +168,16 @@ class TasksHistory(list[asyncio.Task]):
         self,
         manager: "GameManager",
         task: _t.Callable[["GameManager"], _t.Coroutine],
+        *func_args,
         name: str,
+        **func_kwds,
     ):
         if (t := self.get_task(name)) is not None:
             if t.done() is False:
                 raise ValueError("Task already exist")
-        created = asyncio.create_task(task_error_handler(task)(manager), name=name)
+        created = asyncio.create_task(
+            task_error_handler(task)(manager, *func_args, **func_kwds), name=name
+        )
         self.append(created)
         return created
 
@@ -241,13 +251,13 @@ class GameManager(metaclass=GameRoomMeta):
     def status(self):
         return self.room.status
 
-    def set_status(self, s: GameStatus):
+    def set_status(self, s: GameStatus, *func_args, **func_kwds):
         assert (
             self.game_blocked is True or not self.room.playing
         ), "Use block_game_proccess context manager."
         self.room.set_status(s)
         task = self.get_status_handler(status=s)
-        new_task = self.create_task(task, name=s)
+        new_task = self.create_task(task, *func_args, name=s, **func_kwds)
         return new_task
 
     @property
@@ -267,20 +277,20 @@ class GameManager(metaclass=GameRoomMeta):
     def create_task(self):
         return partial(self.tasks.create_task, self)
 
-    async def put_task(self, event: GameStatus):
-        await self.queue.put(event)
+    async def put_task(self, event: GameStatus, *func_args, **func_kwds):
+        await self.queue.put([event, func_args, func_kwds])
         await asyncio.sleep(0.2)
 
     async def queue_handler(self):
         while True:
             try:
-                status = await self.queue.get()
+                status, args, kwds = await self.queue.get()
             except asyncio.CancelledError:
                 break
             assert (
                 status in GameStatus
             ), f"You provided to queue not GameStatus: {type(status)} - {status}"
-            self.set_status(status)
+            self.set_status(status, *args, **kwds)
 
     def clear_queue(self):
         while not self.queue.empty():
@@ -319,7 +329,7 @@ class GameManager(metaclass=GameRoomMeta):
             await message.edit_text(text, parse_mode=enums.ParseMode.MARKDOWN_V2)
 
         await self.room.delete_sended_messages()
-        await self.queue.put(GameStatus.playing)
+        await self.put_task(GameStatus.playing)
 
     @on_status(GameStatus.playing)
     async def play(self):
@@ -468,6 +478,49 @@ class GameManager(metaclass=GameRoomMeta):
         finally:
             if vote.suspected.is_spy:
                 vote.author.score += 1
+
+    @on_status(GameStatus.guess_location)
+    async def guess_location(self, msg: types.CallbackQuery, player: Player):
+        with self.room.with_guess_spy(player):
+            self.room.set_status(GameStatus.guess_location)
+            await self.room.send_message(
+                (await texts.NOTIFY_USERS_ABOUT_SPY(self.room.language_code)).format(
+                    player.mention_markdown()
+                )
+            )
+
+            locations = await self.room.package.get_locations()
+            keyboard = InlineKeyboardBuilder()
+            for location in locations:
+                keyboard.add(
+                    types.InlineKeyboardButton(
+                        text=location.name,
+                        callback_data=CallbackPrefix.guess_location + str(location.id),
+                    )
+                )
+            keyboard.adjust(1)
+
+            try:
+                await msg.message.edit_text(
+                    text=await texts.TRY_TO_GUESS(player.language),
+                    reply_markup=keyboard.as_markup(),
+                    parse_mode=enums.ParseMode.MARKDOWN_V2,
+                )
+
+                await asyncio.sleep(spygame.guess_location_time)
+            finally:
+                await msg.message.delete()
+
+            self.room.players.in_game.ordinary.increase_score(1)
+            await self.room.send_message(
+                (
+                    await texts.NOT_GUESS_LOCATION_IN_TIME(self.room.language_code)
+                ).format(player.mention_markdown())
+            )
+            await player.send_message(
+                await texts.YOU_DOESNT_GUESS_LOCATION_IN_TIME(player.language)
+            )
+            await self.go_to_next_round()
 
     async def finish_game(self):
         self.meta.remove_room(self.room.id)

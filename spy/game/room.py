@@ -49,6 +49,7 @@ def check_field_is_not_none(field: str, msg: _t.Optional[str] = None):
 
 
 class GameStatus(enum.StrEnum):
+    guess_location = "guess_location"
     summary_vote = "summary_vote"
     recruitment = "recruitment"
     playing = "playing"
@@ -90,6 +91,7 @@ class GameRoom(ChatModel):
 
     _end_of_round: _date.datetime = _p.PrivateAttr(default=None)
     _current_round: int = _p.PrivateAttr(default=0)
+    _spy_player_guess: Player | None = _p.PrivateAttr(default=None)
 
     @property
     def playing(self):
@@ -106,6 +108,10 @@ class GameRoom(ChatModel):
     @property
     def summary_voting(self):
         return self.status == GameStatus.summary_vote
+
+    @property
+    def guess_location(self):
+        return self.status == GameStatus.guess_location
 
     @property
     def current_round(self):
@@ -164,6 +170,21 @@ class GameRoom(ChatModel):
     @property
     def __bot__(self):
         return spybot
+
+    @property
+    def guess_spy_player(self):
+        spy = self._spy_player_guess
+        assert (
+            spy is not None
+        ), "Spy player which try to guess location cannot be None in that context."
+        return spy
+
+    @guess_spy_player.setter
+    def guess_spy_player(self, value: Player):
+        assert (
+            isinstance(value, Player) and self._spy_player_guess is None
+        ), "To set player you need to delete previous gueser."
+        self._spy_player_guess = value
 
     def set_status(self, s: GameStatus) -> None:
         self.status_history.append(self.status)
@@ -545,8 +566,10 @@ class GameRoom(ChatModel):
     def vote_manager(self, vote: Vote):
         assert self.vote is None, f"You need to finish {type(self.vote)} as first."
         self.vote = vote
-        yield
-        self.vote = None
+        try:
+            yield
+        finally:
+            self.vote = None
 
     @contextmanager
     def create_summary_vote(self):
@@ -589,3 +612,11 @@ class GameRoom(ChatModel):
         await self.send_message(
             await texts.NOT_SUCCESSFULY_EARLY_VOTING(self.language_code)
         )
+
+    @contextmanager
+    def with_guess_spy(self, spy: Player):
+        self.guess_spy_player = spy
+        try:
+            yield
+        finally:
+            self._spy_player_guess = None

@@ -41,7 +41,7 @@ async def play(msg: types.Message, user: "TelegramUser", **_):
     )
 
     manager = await GameManager.register(room=room)
-    await manager.queue.put(GameStatus.recruitment)
+    await manager.put_task(GameStatus.recruitment)
 
 
 @group_only_msg_without_state.message(
@@ -53,7 +53,7 @@ async def play(msg: types.Message, user: "TelegramUser", **_):
 async def start_playing(msg: types.Message, manager: GameManager, **_):
     manager.tasks.cancel_current_task()
     await manager.room.delete_sended_messages()
-    await manager.queue.put(GameStatus.playing)
+    await manager.put_task(GameStatus.playing)
 
 
 @group_only_msg_without_state.message(
@@ -79,14 +79,10 @@ async def joint_to_the_game(
         game_filters.PlayerFilter("kicked"),
     ),
 )
-@with_user_cache
+@with_player
 @with_manager
-async def left_the_game(
-    msg: types.Message, manager: GameManager, user: "TelegramUser", **_
-):
+async def left_the_game(msg: types.Message, manager: GameManager, player: Player, **_):
     try:
-        player = manager.room.players.get(user.id)
-        assert player is not None, f"PLayer with {user.id} is None"
         await manager.room.quit(player)
     finally:
         await msg.delete()
@@ -110,11 +106,9 @@ def validate_entities(entities: list[types.MessageEntity]):
     game_filters.PlayerFilter("in_game"),
     F.entities.func(validate_entities),
 )
-@with_user_cache
+@with_player
 @with_manager
-async def vote_for_spy(
-    msg: types.Message, manager: GameManager, user: "TelegramUser", **_
-):
+async def vote_for_spy(msg: types.Message, manager: GameManager, player: Player, **_):
     try:
         entity = msg.entities[1]
         assert entity is not None, "Vote enitity is None"
@@ -137,7 +131,7 @@ async def vote_for_spy(
             )
             return
 
-        if suspected == user:
+        if suspected == player:
             await msg.answer(
                 await texts.YOU_CANNOT_VOTE_FOR_YOUR_SELF(
                     manager.room.language_code,
@@ -147,7 +141,7 @@ async def vote_for_spy(
             return
 
         async with manager.block_game_proccess():
-            with manager.room.create_early_vote(author=user, suspected=suspected):
+            with manager.room.create_early_vote(author=player, suspected=suspected):
                 await manager.put_task(GameStatus.voting)
                 await manager.tasks.wait_until_current_task_complete()
     finally:

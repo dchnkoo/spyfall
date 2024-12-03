@@ -41,3 +41,6 @@ class CallbackPrefix(enum.StrEnum):
     vote_per = "vote_per"
     vote_againts = "vote_againts"
     vote = "vote:"
+
+    continue_guess = "continue_guess"
+    guess_location = "gl:"
