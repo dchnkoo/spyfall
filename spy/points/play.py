@@ -4,11 +4,13 @@ from spy.decorators import (
     with_manager,
     with_player,
 )
-from spy.routers import group_only_msg_without_state, group_clear
+from spy.routers import group_only_msg_without_state, group_clear, group_without_state
 from spy.game import GameManager, GameStatus, GameRoom, Player
 from spy import filters as game_filters, texts
 from spy.callback import CallbackPrefix
 from spy.commands import group
+
+from settings import spygame
 
 from utils.exc.callback import CallbackAlert
 
@@ -238,8 +240,27 @@ async def end_the_game(msg: types.Message, manager: GameManager, **_):
     await manager.finish_game()
 
 
+@group_without_state.message(
+    game_filters.GameProccessFilter(GameStatus.summary_vote),
+)
+@with_manager
+async def resender(msg: types.Message, manager: GameManager, **_):
+    vote = manager.room.vote
+    if vote.msg_counter >= spygame.resend_summary_vote_msg_after:
+        vote.msg_counter = 0
+        await manager.room.delete_last_sended_msg()
+        text, reply_markup = vote.vote_message()
+        await manager.room.send_message(
+            text=await text(manager.room.language_code),
+            reply_markup=reply_markup,
+        )
+        return
+    vote.msg_counter += 1
+
+
 @group_clear.message(
     game_filters.GameProccessFilter(),
+    ~game_filters.GameProccessFilter(GameStatus.summary_vote),
 )
 async def cleaner(msg: types.Message):
     await msg.delete()

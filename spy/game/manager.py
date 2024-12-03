@@ -374,14 +374,15 @@ class GameManager(metaclass=GameRoomMeta):
             )
 
             text, reply_markup = vote.vote_message()
-            msg = await self.room.send_message(
+            await self.room.send_message(
                 await text(self.room.language_code), reply_markup=reply_markup
             )
 
             try:
                 await asyncio.sleep(spygame.summmary_vote_time)
             finally:
-                await msg.delete()
+                if self.room.summary_voting:
+                    await self.room.delete_last_sended_msg()
 
             result = self.room.vote_results()
 

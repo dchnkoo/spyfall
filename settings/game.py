@@ -30,3 +30,5 @@ class SpyGame(BaseSettings):
 
     early_vote_time: int = 30
     summmary_vote_time: int = 120
+
+    resend_summary_vote_msg_after: int = 15

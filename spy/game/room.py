@@ -104,6 +104,10 @@ class GameRoom(ChatModel):
         return self.status == GameStatus.voting
 
     @property
+    def summary_voting(self):
+        return self.status == GameStatus.summary_vote
+
+    @property
     def current_round(self):
         return self._current_round
 
@@ -412,7 +416,8 @@ class GameRoom(ChatModel):
 
     async def define_question_to_player(self) -> None:
         players = self.players.in_game
-        self.remove_cur_and_question(players)
+        if self.cur_player:
+            players.safety_remove(self.cur_player)
         self.question_to_player = random.choice(players)
 
     async def define_game_players(self) -> None:
