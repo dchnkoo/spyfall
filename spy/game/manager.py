@@ -349,12 +349,12 @@ class GameManager(metaclass=GameRoomMeta):
                     timeout=self.room.time_to_end_of_round_in_timedelta.seconds,
                 )
             except asyncio.TimeoutError:
-                voting_task = self.tasks.voting
-                if voting_task is None or voting_task.done() is True:
+                locked = self.condition.locked()
+                if not locked:
                     async with self.block_game_proccess():
                         await self.put_task(GameStatus.summary_vote)
                         await self.tasks.wait_until_current_task_complete()
-                del voting_task
+                del locked
 
             async with self.condition:
                 await self.condition.wait_for(lambda: self.game_blocked is False)
