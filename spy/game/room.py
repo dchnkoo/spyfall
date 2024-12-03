@@ -517,18 +517,22 @@ class GameRoom(ChatModel):
         return self.vote.vote_message()
 
     @_t.overload
-    def make_vote(sself, voter: Player, _for: Player, vote: bool = True):
+    def make_vote(sself, voter: Player, _for: Player, vote: bool = True) -> bool:
         """
         In summary voting you need to include per the voter vote.
         """
 
     @_t.overload
-    def make_vote(sself, voter: Player, _for: Player | None = None, vote: bool = True):
+    def make_vote(
+        sself, voter: Player, _for: Player | None = None, vote: bool = True
+    ) -> bool:
         """
         In early voting you doesn't need to include user because he specified when vote initialized.
         """
 
-    def make_vote(self, voter: Player, _for: Player | None = None, vote: bool = True):
+    def make_vote(
+        self, voter: Player, _for: Player | None = None, vote: bool = True
+    ) -> bool:
         assert self.vote is not None, "You need to init voting first."
         return self.vote.vote(voter=voter, _for=_for, vote=vote)
 

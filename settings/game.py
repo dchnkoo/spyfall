@@ -29,3 +29,4 @@ class SpyGame(BaseSettings):
     rest_beetwen_rounds: int = 10
 
     early_vote_time: int = 30
+    summmary_vote_time: int = 120

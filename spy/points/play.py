@@ -184,12 +184,45 @@ async def early_voting(
         raise CallbackAlert(
             message=await texts.YOU_ALREADY_VOTED(player.language), show_alert=True
         )
-    else:
-        _, reply_markup = manager.room.vote_message()
-        await msg.message.edit_reply_markup(
-            msg.inline_message_id, reply_markup=reply_markup
+
+    _, reply_markup = manager.room.vote_message()
+    await msg.message.edit_reply_markup(
+        msg.inline_message_id, reply_markup=reply_markup
+    )
+    raise CallbackAlert(message=await texts.YOU_VOTED(player.language))
+
+
+@group_only_msg_without_state.callback_query(
+    game_filters.GameProccessFilter(GameStatus.summary_vote),
+    F.data.startswith(CallbackPrefix.vote),
+)
+@with_player
+@with_manager
+async def summary_voting(
+    msg: types.CallbackQuery, manager: GameManager, player: Player, **_
+):
+    suspected_id = msg.data.removeprefix(CallbackPrefix.vote)
+    suspected = manager.room.players.get(int(suspected_id))
+    assert suspected is not None, "Player cannot be None in that context."
+
+    if player == suspected:
+        raise CallbackAlert(
+            message=await texts.YOU_CANNOT_VOTE_FOR_YOUR_SELF(player.language),
+            show_alert=True,
         )
-        raise CallbackAlert(message=await texts.YOU_VOTED(player.language))
+
+    voted = manager.room.make_vote(player, suspected)
+
+    if voted is False:
+        raise CallbackAlert(
+            message=await texts.YOU_ALREADY_VOTED(player.language), show_alert=True
+        )
+
+    _, reply_markup = manager.room.vote_message()
+    await msg.message.edit_reply_markup(
+        msg.inline_message_id, reply_markup=reply_markup
+    )
+    raise CallbackAlert(message=await texts.YOU_VOTED(player.language))
 
 
 @group_only_msg_without_state.message(

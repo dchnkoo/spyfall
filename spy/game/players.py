@@ -44,7 +44,7 @@ class Player(TelegramUserModel):
     room_id: room_id
     score: int = 0
 
-    def increase_scrore(self, num: int):
+    def increase_score(self, num: int):
         self.score += num
 
     @property
@@ -180,7 +180,7 @@ class PlayersCollection(BaseCollectionModel[Player]):
 
     def increase_score(self, num: int):
         for player in self:
-            player.increase_scrore(num=num)
+            player.increase_score(num=num)
 
     def safety_remove(self, player: Player):
         try:

@@ -345,9 +345,6 @@ class TranslateStr(str):
         return self
 
     async def __call__(self, to_lang: LanguageCode, *, exclude: tuple[str] = ()):
-        if self.source_language_code == to_lang:
-            return self
-
         saved = SavedTranslates(text=self.string)
 
         saved_translate = saved.get(to_lang)

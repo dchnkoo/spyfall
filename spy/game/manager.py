@@ -123,8 +123,12 @@ class TasksHistory(list[asyncio.Task]):
     def voting(self):
         return self.get_task(GameStatus.voting)
 
+    @property
+    def summary_voting(self):
+        return self.get_task(GameStatus.summary_vote)
+
     def get_task(self, name: str):
-        for task in self:
+        for task in self[::-1]:
             if task.get_name() == name:
                 return task
 
@@ -194,15 +198,11 @@ class GameManager(metaclass=GameRoomMeta):
         )
 
         self._game_blocked = False
-        self._condition = asyncio.Condition()
+        self.condition = asyncio.Condition()
 
-        self._room = room
+        self.room = room
         self.rounds = self.iter_rounds()
         self.round_event = asyncio.Event()
-
-    @property
-    def room(self):
-        return self._room
 
     @property
     def bot(self):
@@ -349,10 +349,15 @@ class GameManager(metaclass=GameRoomMeta):
                     timeout=self.room.time_to_end_of_round_in_timedelta.seconds,
                 )
             except asyncio.TimeoutError:
-                pass
+                voting_task = self.tasks.voting
+                if voting_task is None or voting_task.done() is True:
+                    async with self.block_game_proccess():
+                        await self.put_task(GameStatus.summary_vote)
+                        await self.tasks.wait_until_current_task_complete()
+                del voting_task
 
-            async with self._condition:
-                await self._condition.wait_for(lambda: self.game_blocked is False)
+            async with self.condition:
+                await self.condition.wait_for(lambda: self.game_blocked is False)
 
             await self.room.players.set_status("in_game")
             await self.room.send_round_results(round)
@@ -360,6 +365,55 @@ class GameManager(metaclass=GameRoomMeta):
                 await self.room.redefine_location_and_roles()
         else:
             raise exc.FinishGame()
+
+    @on_status(GameStatus.summary_vote)
+    async def summary_voting(self):
+        with self.room.create_summary_vote() as vote:
+            await self.room.send_message(
+                await texts.SUMMARY_VOTING_MSG(self.room.language_code)
+            )
+
+            text, reply_markup = vote.vote_message()
+            msg = await self.room.send_message(
+                await text(self.room.language_code), reply_markup=reply_markup
+            )
+
+            try:
+                await asyncio.sleep(spygame.summmary_vote_time)
+            finally:
+                await msg.delete()
+
+            result = self.room.vote_results()
+
+            if result is False:
+                await self.room.send_message(
+                    await texts.ANY_PLAYER_WASNT_KICKED(self.room.language_code)
+                )
+            else:
+                assert isinstance(
+                    result, Player
+                ), "In success case result need to be Player instance."
+                if result.is_spy:
+                    await self.room.send_message(
+                        (
+                            await texts.SUCCESSFULLY_SUMMARY_VOTE(
+                                self.room.language_code
+                            )
+                        ).format(link=result.mention_markdown())
+                    )
+
+                    for player in (voted := vote.voted):
+                        if voted[player] == result and not player.is_spy:
+                            player.increase_score(1)
+                else:
+                    await self.room.send_message(
+                        (
+                            await texts.UNSUCCESSFULLY_SUMMARY_VOTE(
+                                self.room.language_code
+                            )
+                        ).format(result.mention_markdown())
+                    )
+                    self.room.players.in_game.spies.increase_score(2)
 
     @on_status(GameStatus.voting)
     async def voting(self):
@@ -373,9 +427,10 @@ class GameManager(metaclass=GameRoomMeta):
             reply_markup=reply_murkup,
         )
 
-        await asyncio.sleep(spygame.early_vote_time)
-
-        await msg.delete()
+        try:
+            await asyncio.sleep(spygame.early_vote_time)
+        finally:
+            await msg.delete()
 
         vote_result = self.room.vote_results()
         assert isinstance(
@@ -388,12 +443,12 @@ class GameManager(metaclass=GameRoomMeta):
                     self.room.players.in_game.spies.increase_score(2)
                     await self.room.send_unsuccessfully_early_voting_msg()
                 else:
-                    [
-                        player.increase_scrore(1)
-                        for player in vote.voted
-                        if vote.voted[player]
-                    ]
+                    for player in (voted := vote.voted):
+                        if voted[player]:
+                            player.increase_score(1)
+
                     await self.room.send_successfully_early_voting_msg()
+
                 await vote.suspected.set_stauts("kicked")
             else:
                 await self.room.send_message(
@@ -430,17 +485,15 @@ class GameManager(metaclass=GameRoomMeta):
 
     @asynccontextmanager
     async def block_game_proccess(self):
-        assert self.room.playing
-
-        self.game_blocked = True
-
-        async with self._condition:
+        async with self.condition:
+            await self.condition.wait_for(
+                lambda: self.room.playing and (self.game_blocked is False)
+            )
+            self.game_blocked = True
             yield
             self.game_blocked = False
-            self._condition.notify_all()
-
+            self.condition.notify_all()
         if not (game_task := self.tasks.play):
             raise exc.Exit()
-
         self.tasks.current_task = game_task
         self.room.set_status(GameStatus.playing)

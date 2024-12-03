@@ -681,8 +681,8 @@ EARLY_VOTE = TranslateStr(
 
 
 SUMMARY_VOTING_MSG = TranslateStr(
-    """
-And so the round has come to an end and you need to vote for the player you think or suspect is a spy, you have 3 minutes to discuss among yourselves and vote.
+    f"""
+And so the round has come to an end and you need to vote for the player you think or suspect is a spy, you have {spygame.summmary_vote_time // 60} minutes to discuss among yourselves and vote.
 
 Once you have cast your vote, it will no longer be possible to cancel it! ⚠️
 """
@@ -727,4 +727,19 @@ REDEFINED_LOCATION_ROLES_MESSAGE = TranslateStr(
 
 ANYONE_WASNT_KICKED = TranslateStr(
     "Anyone wasn't excluded from game, if player which was suspected in spy was a spy, author of vote get the 1 point"
+)
+
+
+ANY_PLAYER_WASNT_KICKED = TranslateStr(
+    "Any player wasnt kicked from game, any doesn't get the points."
+)
+
+
+SUCCESSFULLY_SUMMARY_VOTE = TranslateStr(
+    "You all are right, {link} was a spy! All players which voted for the {link} will get 1 point."
+)
+
+
+UNSUCCESSFULLY_SUMMARY_VOTE = TranslateStr(
+    "{} wasnt a spy, only spy players will get the 2 points each in that round."
 )
