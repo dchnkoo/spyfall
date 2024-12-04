@@ -21,9 +21,6 @@ if _t.TYPE_CHECKING:
 )
 @create_user_or_update
 async def start_command(msg: types.Message, bot: Bot, user: "TelegramUser", **_):
-    if not (await user.get_settings()):
-        await Settings.add({"user_id": user.id})
-
     link = await create_startgroup_link(bot, "true")
 
     keyboard = InlineKeyboardBuilder()

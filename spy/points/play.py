@@ -57,21 +57,6 @@ async def start_playing(msg: types.Message, manager: GameManager, **_):
 
 
 @group_only_msg_without_state.message(
-    filters.Command(group.join),
-    game_filters.GameProccessFilter(GameStatus.recruitment),
-)
-@create_user_or_update
-@with_manager
-async def joint_to_the_game(
-    msg: types.Message, user: "TelegramUser", manager: GameManager, **_
-):
-    try:
-        await manager.room.add_player(user)
-    finally:
-        await msg.delete()
-
-
-@group_only_msg_without_state.message(
     filters.Command(group.leave),
     game_filters.GameProccessFilter(),
     filters.or_f(

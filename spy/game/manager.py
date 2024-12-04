@@ -13,6 +13,7 @@ from settings import spygame
 from loguru import logger
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.exceptions import TelegramForbiddenError
 from aiogram import enums, types
 
 from spy.callback import CallbackPrefix

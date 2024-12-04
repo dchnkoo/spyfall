@@ -812,3 +812,8 @@ NOT_GUESS_LOCATION_IN_TIME = TranslateStr(
 YOU_DOESNT_GUESS_LOCATION_IN_TIME = TranslateStr(
     "You doesn't guessed location in time and lose that round."
 )
+
+
+CANNOT_CONTINUE_GAME_BECAUSE_BOT_BLOCKED = TranslateStr(
+    "Someone of you blocked me. Cannot continue game, recreate new game with active players."
+)

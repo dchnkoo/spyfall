@@ -2,7 +2,7 @@ from utils.exc.assertion import AssertionAnswer, handler as assertion_handler
 from utils.msg import extract_message, extract_chat_id
 from utils.exc.callback import CallbackAlert
 
-from database import TelegramUser
+from database import TelegramUser, Settings
 
 from spy.game import GameManager, exc as game_exception
 from spy.routers import spybot
@@ -30,6 +30,8 @@ def create_user_or_update(func):
                 texts.SOMETHING_WRONG_TRY_START, translate=lang_code
             )
             user = await TelegramUser.add(new_user)
+            if not (await user.get_settings()):
+                await Settings.add({"user_id": user.id})
         except exc.IntegrityError:
             user = TelegramUser.model_validate(new_user)
             del user.updated_date

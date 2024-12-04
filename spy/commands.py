@@ -45,7 +45,6 @@ class GroupCommands(Commands):
         command="vote",
         description="Vote for spy! 🕵🏻‍♂️ Use @ after command to select user.",
     )
-    join = BotCommand(command="join", description="Join to the game room. 👥")
     end = BotCommand(command="end", description="End the game. ⛔️")
 
 
