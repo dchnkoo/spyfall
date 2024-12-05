@@ -1,819 +1,653 @@
-from utils.translate import TranslateStr
 from spy.commands import private, group
 from settings import spygame
 
 
-SOMETHING_WRONG = TranslateStr("Something goes wrong.")
+SOMETHING_WRONG = r"Щось пішло не так\."
 
 
-SOMETHING_WRONG_TRY_START = TranslateStr(
-    "Something goes wrong, use /start command and try again."
+SOMETHING_WRONG_TRY_START = (
+    SOMETHING_WRONG + r" Використайте команду /start та спробуйте знову\."
 )
 
 
-FIX = TranslateStr("Fix 🔧")
+FIX = "Виправити 🔧"
 
 
-COMMAND_ONLY_FOR_ADMINS = TranslateStr("This command only for admins.")
+COMMAND_ONLY_FOR_ADMINS = r"Ця команда тільки для адміністраторів\."
 
 
-YOU_NEED_TO_GO_TO_THE_BOT = TranslateStr(
-    "Something goes wrong, click on button below and try again."
+YOU_NEED_TO_GO_TO_THE_BOT = (
+    SOMETHING_WRONG + r" Натисність на кнопку нижче та спробуйте знову\."
 )
 
 
-ADDED_SUCCESSFULY_SOME = TranslateStr("{some} added successfully!")
+ADDED_SUCCESSFULY_SOME = r"{some} додано успішно\!"
 
 
-START_MSG = TranslateStr(
+START_MSG = (
     """
-Hello, {user.escaped_full_name}! 🎉
+Привіт, {user.escaped_full_name}\\! 🎉
 
-Welcome to the game "Spyfall"! 🕵️‍♂️ This bot will be your game host, making it easy to organize and play with your friends anytime. Just add me to a chat, and let’s get started!
-
-What you can do:
-
-Play with default locations and roles
-- Don’t want to spend time setting up? Use the ready-made set of locations and roles I’ve prepared just for you.
+Ласкаво просимо до гри *"Знахідка для шпигуна"* 🕵️‍♂️
+Цей бот стане вашим ведучим, допомагаючи легко організувати гру та грати з друзями в будь\\-який час\\. Просто додай мене в чат, і почнемо\\!
 """
     + f"""
-Create your own game packs -> /{private.create_package.command}
-- Got unique ideas for locations and roles? Create your own custom pack and play with your friends your way.
+*\\#\\#\\# Що я вмію:*
 
-Customize the game to your liking -> /{private.game_settings.command}
+**🔹 Грай з готовими локаціями та ролями**
+\\- Не хочеш витрачати час на налаштування? Використовуй набір локацій та ролей, який я вже підготував для тебе\\.
 
-- Choose a specific pack if you want to try something new.
-- Pick individual locations or roles to create a unique atmosphere.
-- Set the number of rounds and the duration of each round.
-- If you have big group to play you can play with two spies! 🕵️‍♂️🕵️‍♂️
-- If two spies in game they can know each other and play together in team or no 👀
+**🔹 Створюй власні ігрові набори** \\- {private.create_package}
+\\- Є ідеї для унікальних локацій чи ролей? Створи свій власний набір і грай за своїми правилами\\.
 
-Host games effortlessly
-- I’ll handle the rules, announce turns, start and end rounds, and even assist with voting for the suspect.
+**🔹 Налаштовуй гру під себе** \\- {private.game_settings}
+\\- Обери конкретний набір, якщо хочеш спробувати щось нове\\.
+\\- Вибери окремі локації чи ролі, щоб створити унікальну атмосферу\\.
+\\- Налаштуй кількість раундів та тривалість кожного\\.
+\\- У великих компаніях грайте з двома шпигунами 🕵️‍♂️🕵️‍♂️\\.
+\\- Два шпигуни можуть знати один одного і грати в команді або залишатися в невіданні 👀\\.
 
-How to start?
-- Read the rules -> /{private.rules.command}
-- Use the /{private.help.command} command to learn available commands.
-- Add me to a group chat with your friends and start a game with the /{group.play.command} command.
+**🔹 Легко веди ігри**
+\\- Я подбаю про правила, оголошу хід, початок і закінчення раундів та навіть допоможу з голосуванням підозрюваних\\.
 
-Ready for an adventure? Let’s find the spy together! 😏
+*\\#\\#\\# Як почати?*
+\\- Ознайомся з правилами \\- {private.rules}
+\\- Використовуй команду {private.help} для перегляду доступних команд\\.
+\\- Додай мене до групового чату з друзями та запускай гру командою {group.play}\\.
+
+Готовий до пригод? Давайте разом знайдемо шпигуна 😏
 """
 )
 
 
-ADD_ME_TO_GROUP = TranslateStr("Add me to the group 🕵️‍♂️")
+ADD_ME_TO_GROUP = "Додай мене до групи 🕵️‍♂️"
 
 
-SKIPED_ACTION = TranslateStr("Action was skipped.")
+SKIPED_ACTION = r"Дія була пропущена\."
 
 
-CANCELED_ACTION = TranslateStr("Action was canceled.")
-
-CANCEL = TranslateStr("Cancel")
+CANCELED_ACTION = r"Дія була скасована\."
 
 
-YOU_CANNOT_SKIP_THAT_ACTION = TranslateStr("You cannot skip that action.")
+CANCEL = "Скасувати"
 
 
-YOU_CANNOT_CANCEL_THAT_ACTION = TranslateStr("You cannot cancel that action.")
+YOU_CANNOT_SKIP_THAT_ACTION = r"Ви не можете пропустити цю дію\."
 
 
-NAME_FOR_PACKAGE = TranslateStr(
-    f"""
-Enter the name for the package or click /{private.cancel.command} to cancel the action. 📦
-> Example: "My first package"
+YOU_CANNOT_CANCEL_THAT_ACTION = r"Ви не можете скасувати цю дію\."
+
+
+NAME_FOR_PACKAGE = f"""
+Введіть ім'я дял пакету або натисніть {private.cancel} щоб скасувати дію\\. 📦
+\\> Приклад: "Мій перший пакет"
 """
-)
 
 
-CANCELED = TranslateStr("Canceled.")
+CANCELED = r"Скасовано\."
 
 
-PACKAGE_ALREADY_EXISTS = TranslateStr("Package with {name} name already exists.")
+PACKAGE_ALREADY_EXISTS = r"Пакет з {name} ім'ям вже існує\."
 
 
-CLICK_ON_PACKAGE = TranslateStr(
+CLICK_ON_PACKAGE = r"""
+    Натисніть на пакет щоб обрати його\. 📦
+
+    Якщо ви не виберете жодного пакету він буде обраний під час гри автоматично\.
     """
-    Click on the package to select it. 📦
 
-    If you doesn't choose any package, the game will be started with the random package.
+
+YOU_NEED_TO_SELECT_PACKAGE_FOR_SELECTING_LOCATIONS = r"""
+    Вам потрібно спочатку обрати пакет для того щоб обрати локації\. 📦
     """
-)
 
 
-YOU_NEED_TO_SELECT_PACKAGE_FOR_SELECTING_LOCATIONS = TranslateStr(
+PACKAGE_CREATED = r"Пакет створенний\!"
+
+
+INFO_PACKAGES = """
+    Кількість пакетів: {} 📮
     """
-    You need to select the package first to select the locations. 📦
-    """
-)
 
+INFO_PACKAGE = """
+Ім'я пакету: {package.escaped_name} 📦
 
-PACKAGE_CREATED = TranslateStr("Package created!")
-
-
-INFO_PACKAGES = TranslateStr(
-    """
-    Number of packages: {} 📮
-    """
-)
-
-INFO_PACKAGE = TranslateStr(
-    """
-Package name: {package.escaped_name} 📦
-
-Number of locations: {} 📍
+Кількість локації: {} 📍
 """
-)
 
 
-SHOW_PACKAGES = TranslateStr("Show packages 📦")
+SHOW_PACKAGES = "Показати мої пакети 📦"
 
 
-YOU_DOESNT_HAVE_ANY = TranslateStr("You doesn't have any {some} yet.")
+YOU_DOESNT_HAVE_ANY = r"У вас ще немає {some}\."
 
 
-YOU_DOESNT_HAVE_ANY_PACKAGE = YOU_DOESNT_HAVE_ANY.format(some="packages")
+YOU_DOESNT_HAVE_ANY_PACKAGE = YOU_DOESNT_HAVE_ANY.format(some="пакетів")
 
 
-PACKAGE_WAS_DELETED = TranslateStr("Package was deleted!")
+PACKAGE_WAS_DELETED = r"Пакет був видалений\!"
 
 
-CLOSE_SOME = TranslateStr("Close {some} ✖️")
+CLOSE_SOME = "Закрити {some} ✖️"
 
 
-CLOSE_LIST = CLOSE_SOME.format(some="list")
+CLOSE_LIST = CLOSE_SOME.format(some="список")
 
 
-DELETE_SOME = TranslateStr("Delete {some} 🗑")
+DELETE_SOME = "Видалити {some} 🗑"
 
 
-DELETE_PACKAGE = DELETE_SOME.format(some="package")
+DELETE_PACKAGE = DELETE_SOME.format(some="пакет")
 
 
-SELECT_GAME_PACKAGE = TranslateStr("Select the game package 📦")
+SELECT_GAME_PACKAGE = "Обрати ігровий пакет 📦"
 
 
-ADD_SOME = TranslateStr("Add {some}")
+ADD_SOME = "Додати {some}"
 
 
-ADD_LOCATION = ADD_SOME.format(some="location 📍")
+ADD_LOCATION = ADD_SOME.format(some="локацію 📍")
 
 
-LOCATIONS = TranslateStr("Locations 📍")
+LOCATIONS = "Локації 📍"
 
 
-BACK = TranslateStr("Back ↩️")
+BACK = "Назад ↩️"
 
 
-ENTER_NAME = TranslateStr(
-    """
-Enter the name for the {some} or click /cancel to cancel the action.
-> Example: {}
+ENTER_NAME = r"""
+Введіть ім'я для {some} або натисність /cancel щоб скасувати дію\.
+\> Приклад: {}
 """
-)
 
 
-ENTER_LOCATION_NAME = ENTER_NAME.format('"Hospital"', some="location")
+ENTER_LOCATION_NAME = ENTER_NAME.format('"Лікарня"', some="локації")
 
 
-ENTER_LINK_ON_IMAGE_OR_SKIP = TranslateStr(
-    """
-Enter the link on the image for the location or click /skip to skip this action. 🖼
-> Example: "https://example.com/image.jpg"
+ENTER_LINK_ON_IMAGE_OR_SKIP = r"""
+Введіть посилання на зображення для локації або натисніть /skip щоб пропустити цю дію\. 🖼
+\> Приклад: "https://example\.com/image\.jpg"
 """
-)
 
 
-FAILED_TO_ADD_EXISTS = TranslateStr(
+FAILED_TO_ADD = r"Помилка при додаванні\."
+
+
+FAILED_TO_ADD_EXISTS = FAILED_TO_ADD + r" Ця {some} вже існує\."
+
+
+FAILED_TO_ADD_LIMIT = FAILED_TO_ADD + r" Ви досягли ліміту {some}\."
+
+
+FAILED_TO_ADD_LOCATION_EXIST = FAILED_TO_ADD_EXISTS.format(some="локація")
+
+
+FAILED_TO_ADD_LOCATION_LIMIT = FAILED_TO_ADD_LIMIT.format(some="локацій")
+
+
+LOCATION_ADDED_SECCESSFULLY = ADDED_SUCCESSFULY_SOME.format(some="Локацію")
+
+
+YOU_NEED_ADD_LOCATIONS_FOR_PACKAGE_TO_CHOOSE = r"""
+    Вам потрібно додати локацій до пакету щоб обрати їх\. 📍
     """
-Failed to add {some}. This {some} already exists.
+
+
+SELECT_GAME_LOCATIONS = r"""
+Оберіть локації для гри\. 📍
+
+Якщо ви не виберете жодної локації, їх буде обрано автоматично під час гри\.
 """
-)
 
 
-FAILED_TO_ADD_LIMIT = TranslateStr(
+SELECT_LOCATION_FOR_ROLE = r"""
+    Оберіть локації для того щоб обрати ролі\. 📍
     """
-Failed to add {some}. You have reached the limit of {some}s.
+
+
+INFO_LOCATION = """
+Локація: {location.escaped_name} 📍
+
+Ролі: {} 👤
 """
+
+
+CHOOSE_GAME_LOCATIONS = "Оберіть локації для гри 📍"
+
+
+YOU_PROVIDED_NOT_VALID_IMAGE = r"Ви надали хибне посилання\. Спробуйте інше\."
+
+
+DELETE_LOCATION = DELETE_SOME.format(some="локацію")
+
+
+YOU_DOES_NOT_HAVE_LOCATIONS = YOU_DOESNT_HAVE_ANY.format(some="локацій")
+
+
+YOU_DOES_NOT_HAVE_LOCATIONS_IN_THAT_PACKAGE = (
+    YOU_DOES_NOT_HAVE_LOCATIONS + r" В пакеті {}\."
 )
 
 
-FAILED_TO_ADD_LOCATION_EXIST = FAILED_TO_ADD_EXISTS.format(some="location")
+ROLES = "Ролі 👥"
 
 
-FAILED_TO_ADD_LOCATION_LIMIT = FAILED_TO_ADD_LIMIT.format(some="location")
+ADD_ROLE = ADD_SOME.format(some="роль 👤")
 
 
-LOCATION_ADDED_SECCESSFULLY = ADDED_SUCCESSFULY_SOME.format(some="Location")
+DESCRIPTION_VALIDATION_ERROR = r"Опис повинен бути менше 300 символів\."
 
 
-YOU_NEED_ADD_LOCATIONS_FOR_PACKAGE_TO_CHOOSE = TranslateStr(
-    """
-    You need to add locations for the package to choose them. 📍
-    """
-)
+FAILED_TO_ADD_ROLE_LIMIT = FAILED_TO_ADD_LIMIT.format(some="ролей")
 
 
-SELECT_GAME_LOCATIONS = TranslateStr(
-    """
-Select locations for your game. 📍
+FAILED_TO_ADD_ROLE_EXISTS = FAILED_TO_ADD_EXISTS.format(some="роль")
 
-If you doesn't choose any location, the game will be started with the random location.
+
+ROLE_ADDED = ADDED_SUCCESSFULY_SOME.format(some="Роль")
+
+
+ENTER_ROLE_NAME = ENTER_NAME.format('"Доктор"', some="ролі")
+
+
+ENTER_ROLE_DESCRIPTION = f"""
+Ведіть опис для ролі або введіть команду /skip щоб пропустити\\. 👤
+
+Максимум {spygame.role_description_limit} символів\\.
+
+\\> Приклад: "Лікує людей"
 """
-)
 
 
-SELECT_LOCATION_FOR_ROLE = TranslateStr(
-    """
-    Select the location for the choose roles. 📍
-    """
-)
+YOU_DOESNT_HAVE_ANY_ROLES = YOU_DOESNT_HAVE_ANY.format(some="ролей")
 
 
-INFO_LOCATION = TranslateStr(
-    """
-Location: {location.escaped_name} 📍
+ROLES_INFO = """
+Локаця: {location.escaped_name} 📍
 
-Roles: {} 👤
+Кількість ролей: {} 👤
 """
-)
 
 
-CHOOSE_GAME_LOCATIONS = TranslateStr("Choose locations for the game 📍")
+DELETE_ROLE = DELETE_SOME.format(some="роль")
 
 
-YOU_PROVIDED_NOT_VALID_IMAGE = TranslateStr(
-    "You provided not valid image. Try another link."
-)
+ROLE_INFO = """
+Роль: {role.escaped_name} 👤
 
-
-DELETE_LOCATION = DELETE_SOME.format(some="location")
-
-
-ENTER_LINK_ON_IMAGE_OR_SKIP = TranslateStr(
-    """
-Enter the link on the image for the location or click /skip to skip this action. 🖼
-> Example: "https://example.com/image.jpg"
+Опис: {role.escaped_description}
 """
-)
 
 
-YOU_DOES_NOT_HAVE_LOCATIONS = YOU_DOESNT_HAVE_ANY.format(some="locations")
+CHOOSE_GAME_ROLES = "Виберіть ролі для гри 👤"
 
 
-YOU_DOES_NOT_HAVE_LOCATIONS_IN_THAT_PACKAGE = YOU_DOES_NOT_HAVE_LOCATIONS.add(
-    " In package {}."
-)
-
-
-ROLES = TranslateStr("Roles 👥")
-
-
-ADD_ROLE = ADD_SOME.format(some="role 👤")
-
-
-DESCRIPTION_VALIDATION_ERROR = TranslateStr(
-    "Description need to be less than 300 symbols."
-)
-
-
-FAILED_TO_ADD_ROLE_LIMIT = FAILED_TO_ADD_LIMIT.format(some="role")
-
-
-FAILED_TO_ADD_ROLE_EXISTS = FAILED_TO_ADD_EXISTS.format(some="role")
-
-
-ROLE_ADDED = ADDED_SUCCESSFULY_SOME.format(some="role")
-
-
-ENTER_ROLE_NAME = ENTER_NAME.format('"Doctor"', some="role")
-
-
-ENTER_ROLE_DESCRIPTION = TranslateStr(
-    f"""
-    Enter the description for the role or /skip this action. 👤
-
-    Maximum {spygame.role_description_limit} characters.
-
-    > Example: "Heal people"
+YOU_NEED_ADD_ROLES_FOR_LOCATION_TO_CHOOSE = r"""
+    Вам потрібно додати ролі для локації щоб обрати їх\. 👤
     """
-)
 
 
-YOU_DOESNT_HAVE_ANY_ROLES = YOU_DOESNT_HAVE_ANY.format(some="roles")
+SELECT_GAME_ROLES = r"""
+Оберіть ролі для вашої гри\. 👤
 
-
-ROLES_INFO = TranslateStr(
-    """
-Location: {location.escaped_name} 📍
-
-Number of roles: {} 👤
+Оберіть ролі для гри, якщо ви не оберете жодної ролі її буде обрано автоматично\.
 """
-)
 
 
-DELETE_ROLE = DELETE_SOME.format(some="role")
+CLOSE_MENU = CLOSE_SOME.format(some="меню")
 
 
-ROLE_INFO = TranslateStr(
-    """
-Role: {role.escaped_name} 👤
+CONFIGURE_SPIES = "Налаштуйте шпигунів 🕵️‍♂️"
 
-Description: {role.escaped_description}
+
+CONFIGURE_ROUNDS = "Налаштуйте раунди 🎯"
+
+
+GAME_SETTINGS = "Ігрові налаштування 🎲"
+
+
+ROUNDS_MENU = r"""
+Тут ви можете налаштувати кількість раундів та час оного раунду ⌛️\.
+
+Поточні налаштування:
+    Раунди: {rounds} 🎲
+    Час раунду: {round_duration} хв ⏳
 """
-)
 
 
-CHOOSE_GAME_ROLES = TranslateStr("Choose roles for the game 👤")
+NUMBER_OF_ROUNDS = "Кількість раундів 🧩"
 
 
-YOU_NEED_ADD_ROLES_FOR_LOCATION_TO_CHOOSE = TranslateStr(
-    """
-    You need to add roles for the location to choose them. 👤
-    """
-)
+ROUND_TIME = "Час раунду ⚙️"
 
 
-SELECT_GAME_ROLES = TranslateStr(
-    """
-Select roles for your game. 👤
+CONFIGURE_ROUND_TIME = r"""
+Налаштування часу раунду ⚙️
 
-If you doesn't choose any role, the game will be random choose roles.
+⚠️ Рекомендації по часу раунду до кількості гравців:
+    4 гравця \- 6 хвилин
+    5–6 гравців \- 7 хвилин
+    7–8 гравців \- 8 хвилин
+    9–10 гравців \- 9 хвилин
+    11–12 гравців \- 10 хвилин
+
+Поточний час: {time} хв ⏱
 """
-)
 
 
-CLOSE_MENU = CLOSE_SOME.format(some="menu")
-
-
-CONFIGURE_SPIES = TranslateStr("Configure spies 🕵️‍♂️")
-
-
-CONFIGURE_ROUNDS = TranslateStr("Configure game rounds 🎯")
-
-
-GAME_SETTINGS = TranslateStr("Game settings 🎲")
-
-
-ROUNDS_MENU = TranslateStr(
-    """
-In that menu you can configure how much rounds you want to play per one game and round duration ⌛️.
-
-Current settings:
-    Rounds: {rounds} 🎲
-    Round duration: {round_duration} minute(s) ⏳
+TIME_ERROR = f"""
+Ви не можете встановити час раунду менший за {spygame.min_round_time} та більший за {spygame.max_round_time} хв.
 """
-)
 
 
-NUMBER_OF_ROUNDS = TranslateStr("Number of rounds 🧩")
+TIME_EDITED = "Час раунду відредаговано успішно ✅"
 
 
-ROUND_TIME = TranslateStr("Round time ⚙️")
+CONFIGURE_NUMBER_OF_ROUNDS = """
+Налаштуйте кількість раундів ⚙️
 
-
-CONFIGURE_ROUND_TIME = TranslateStr(
-    """
-Configure round time ⚙️
-
-⚠️ Recommendations for round time to number of players:
-    4 players — 6 minutes
-    5–6 players — 7 minutes
-    7–8 players — 8 minutes
-    9–10 players — 9 minutes
-    11–12 players — 10 minutes
-
-Current time: {time} minute(s) ⏱
+Поточна кількість раундів: {rounds} 🎲
 """
-)
 
 
-TIME_ERROR = TranslateStr(
-    f"""
-You cannot set round duration less than {spygame.min_round_time} and more than {spygame.max_round_time} minute(s)
+ROUNDS_ERROR = f"""
+Ви не можете встановити кількість раундів менший за {spygame.min_rounds} та більшу за {spygame.max_rounds}.
 """
-)
 
 
-TIME_EDITED = TranslateStr(
+ROUNDS_EDITED = "Кількість раундів відредаговано успішно ✅"
+
+
+SET_TWO_SPIES = "Два шпигуни в грі"
+
+
+SPIES_KNOW_EACH_OTHER = "Шпигуни знають один одного"
+
+
+SPIES_CONFIGURE_EXPLAIN = f"""
+    Налаштуйте шпигунів для гри\\. 🕵️‍♂️
+
+    Якщо ви оберете опцію "{SET_TWO_SPIES}", гра розпочнеться з двома шпигунами якщо у вас більше {spygame.two_spies_limits_on_players} гравців\\.
+
+    Якщо ви оберете опцію "{SPIES_KNOW_EACH_OTHER}", якщо у вас в грі два шпигуна то вибравши цю опцію кожному шпигуну буде надіслано повідомлення від бота про те хто другий шпигун, в іншому випадку він не буде цього робити та шпигуни не зможуть працювати в команді\\.
     """
-Round duration edited successfully ✅
+
+
+NOTIFY_USER_ABOUT_ROLE = """
+Твоя роль: {role.escaped_name} 👤
+Опис ролі: {role.escaped_description}
 """
+
+
+NOTIFY_ABOUT_LOCATION = "Локація: {location.escaped_name} 📍"
+
+
+YOU_ALREADY_IN_GAME = r"Ти вже в грі\."
+
+
+ROLES_LESS_THAN_PLAYERS = (
+    r"Ролей менше ніж гравців в {} локації. Неможливо розпочати гру\."
 )
 
 
-CONFIGURE_NUMBER_OF_ROUNDS = TranslateStr(
-    """
-Configure number of rounds ⚙️
+YOU_NEED_MIN_THE_PLAYERS_TO_PLAY_WITH_TWO_SPIES = f"Вам потрібно мінімум {spygame.two_spies_limits_on_players} гравців щоб грати з двома шпигунами\\."
 
-Current number of rounds: {rounds} 🎲
+
+GAME_ROOM_ALREADY_FULL = r"Ігрова кімната вже повна\."
+
+
+THE_SECOND_SPY_IS = r"""
+    Другий шпигун це \- {player.markdown_user_link} 🕵️‍♂️
+    """
+
+
+SELECTED_LOCATIONS_NEED_TO_BE_MORE_THAN_ROUNDS = r"""
+Локації які ви обираєте повинні бути більше ніжні кількість раундів\!
+
+Поточна кількість обраних локації: {} 📍
+Раундів: {} 🎯
 """
-)
 
 
-ROUNDS_ERROR = TranslateStr(
-    f"""
-You cannot set less than {spygame.min_rounds} and more than {spygame.max_rounds} round(s)
+LOCATIONS_NEED_TO_BE_MORE_THAN_ROUNDS = r"""
+Локацій в пакеті не достатньо щоб почати гру\. Локацій повинно бути більше ніж раундів\.
+
+Кількість раундів: {} 📍
+Раундів: {} 🎯
 """
-)
 
 
-ROUNDS_EDITED = TranslateStr(
+BEGIN_ROUND = r"Початок {} раунду\!"
+
+
+TO_END_OF_ROUND_REMAINS = r"До кінця раунду залишилось {} хв {} сек\."
+
+
+GAME_ENDED = r"""
+    Гра була закінчення\. 🕵️‍♂️
     """
-Number of rounds edited successfully ✅
+
+
+RECRUITMENT_MESSAGE = f"""
+🎲 *Розпочинається гра\\!* 🎲
+Зараз відбувається набір гравців\\. У вас є *{spygame.recruitment_time // 60} хв* щоб приєднатися\\!
+
+🔹 Щоб вийти з гри використовуйте команду `/leave`\\.
+
+📢 Запрошуйте друзів \\- більше гравців, більше веселощів\\!
+⌛ *Час пливе\\.\\.\\. Гра розпочнеться за {spygame.recruitment_time // 60} хв\\!*
 """
-)
 
 
-SET_TWO_SPIES = TranslateStr(
-    """
-    Two spies in game
-    """
-)
+GAME_STARTED = r"""
+🔥 *Гра розпочалася\!* 🔥
 
+🔍 *Як це працює:*
+1\. Кожному гравцю призначено роль:
+Один або двоє з вас — це *Шпигун*, який не знає локації\.
+Решта гравців знають локацію та мають конкретні ролі\.
 
-SPIES_KNOW_EACH_OTHER = TranslateStr(
-    """
-    Spies know each other
-    """
-)
+2\. *Завдання гравців:* Виявити Шпигуна, задаючи хитрі запитання\.
+Запитання мають допомагати викрити Шпигуна, не розкриваючи занадто багато про локацію\.
 
+3\. *Завдання Шпигуна:* З’ясувати локацію або уникнути підозри до кінця раунду\.
 
-SPIES_CONFIGURE_EXPLAIN = TranslateStr(
-    """
-    Configure the spies for the game. 🕵️‍♂️
+4\. У кінці раунду відбудеться *фаза голосування*, де кожен голосує, хто, на їхню думку, є Шпигуном\.
 
-    If you choose the option "Two spies in game", the game will be started with two spies and if you have more than 8 players.
+5\. *Дострокове голосування \(опціонально\):* У будь\-який момент гри, якщо гравець впевнений, хто Шпигун, він може ініціювати *дострокове голосування* за допомогою команди `/vote @username`\.
 
-    If you choose the option "Spies know each other", the spies will know each other in that game in opposite situation bot will not send message to spies about them.
-    """
-)
+⌛ *Тривалість раунду:* {} хв\.
+🎲 *Кількість раундів у грі:* {} раунд\(и\|ів\)\.
 
-
-NOTIFY_USER_ABOUT_ROLE = TranslateStr(
-    """
-Your role: {role.escaped_name} 👤
-Role description: {role.escaped_description}
+🎭 Нехай гра розпочнеться\! Хід поточного гравця буде оголошено автоматично\.
 """
-)
 
 
-NOTIFY_ABOUT_LOCATION = TranslateStr("Location: {location.escaped_name} 📍")
+JOIN_TO_THE_GAME = "Приєднатися до гри 🕵️‍♂️"
 
 
-YOU_ALREADY_IN_GAME = TranslateStr("You already in game.")
+RECRUITMENT_WILL_END = r"Набір закінчиться за {} секунд\."
 
 
-ROLES_LESS_THAN_PLAYERS = TranslateStr(
-    "Roles less than players in {} location. Cannot start the game."
-)
+DISPLAY_PLAYERS = "*В грі:*\n\n{}\n\n*Усього гравців:* {}"
 
 
-YOU_NEED_MIN_THE_PLAYERS_TO_PLAY_WITH_TWO_SPIES = TranslateStr(
-    f"You need minimum {spygame.two_spies_limits_on_players} players to play with two spies."
-)
+GREETINGS_MSG_IN_GROUP = f"""
+**🤖 Привіт усім\\! Я Ведучий гри "Знахідка для шпигуна"\\! 🕵️‍♂️**
 
-
-GAME_ROOM_ALREADY_FULL = TranslateStr("Game room already full.")
-
-
-THE_SECOND_SPY_IS = TranslateStr(
-    """
-    The second spy is {player.markdown_user_link} 🕵️‍♂️
-    """
-)
-
-
-SELECTED_LOCATIONS_NEED_TO_BE_MORE_THAN_ROUNDS = TranslateStr(
-    """
-Game locations which you selected need to be more than rounds!
-
-Number of locations: {} 📍
-Rounds: {} 🎯
-"""
-)
-
-
-LOCATIONS_NEED_TO_BE_MORE_THAN_ROUNDS = TranslateStr(
-    """
-Locations in package not enough to start. Locations need to be more than rounds.
-
-Number of locations: {} 📍
-Rounds: {} 🎯
-"""
-)
-
-
-BEGIN_ROUND = TranslateStr("Begin of {} round!")
-
-
-TO_END_OF_ROUND_REMAINS = TranslateStr(
-    "To the end of the round remains in {} mintes {} seconds."
-)
-
-
-GAME_ENDED = TranslateStr(
-    """
-    The game was ended. 🕵️‍♂️
-    """
-)
-
-
-RECRUITMENT_MESSAGE = TranslateStr(
-    """
-🎲 *The game is starting!* 🎲
-We are now recruiting players to join the game. You have *1 minute* to join!
-
-🔹 To join the game, click the button below or type `/join`.
-🔹 To leave the game, use `/leave`.
-
-📢 Invite your friends — the more players, the more fun!
-⌛ *The timer is ticking... The game will begin in 1 minute!*
-"""
-)
-
-
-GAME_STARTED = TranslateStr(
-    """
-🔥 *The game has begun!* 🔥
-
-🔍 *Here’s how it works:*
-1. Each player has been assigned a role:
-One or two of you is the *Spy*, who doesn’t know the location.
-The rest of you know the location and have specific roles to play.
-
-2. *The players’ goal:* Identify the Spy by asking clever questions.
-Questions should help uncover the Spy without revealing too much about the location.
-
-3. *The Spy’s goal:* Figure out the location or avoid suspicion until the round ends.
-
-4. At the end of the round, there will be a *voting phase*, where everyone votes for who they believe the Spy is.
-
-5. *Optional Early Voting:* At any moment during the game, if a player is confident about who the Spy is, they can initiate *early voting* using the `/vote @username` command.
-
-⌛ *Round duration:* {} minutes.
-🎲 *Game number of rounds:* {} rounds.
-
-🎭 Let the game begin! The current player’s turn will be announced automatically.
-"""
-)
-
-
-JOIN_TO_THE_GAME = TranslateStr("Join to the game 🕵️‍♂️")
-
-
-RECRUITMENT_WILL_END = TranslateStr("Recruitment will end in {} seconds")
-
-
-DISPLAY_PLAYERS = TranslateStr("*In game:*\n\n{}\n\n*Total:* {}")
-
-
-GREETINGS_MSG_IN_GROUP = TranslateStr(
-    f"""
-**🤖 Hello, everyone! I'm the Spyfall Game Master! 🕵️‍♂️**
-
-Thank you for adding me to your group! I'm here to bring the Spyfall experience to life 🎉. Here's what you need to know:
+Дякую, що додали мене до вашої групи\\! Я тут, щоб оживити досвід гри "Знахідка для шпигуна" 🎉\\. Ось що вам потрібно знати:
 
 ---
 
-🛠 **About Me:**
-- I help you play **Spyfall**, a thrilling game of mystery and deduction.
-- I'll manage roles, assign secret locations, and keep track of rounds.
+🛠 **Про мене:**
+\\- Я допомагаю вам грати у **"Знахідка для шпигуна"**, захопливу гру таємниць і дедукції\\.
+\\- Я розподіляю ролі, призначаю секретні локації та відстежую хід гри\\.
 
-~~---~~
+\\~\\~\\-\\-\\~\\~
 
-🔑 **Permissions Required:**
-To function properly, I need **Admin Rights** in this group. Please ensure I have the following permissions:
-1️⃣ **Pin messages** (for game announcements).
-2️⃣ **Delete messages** (to remove unnecessary clutter).
-3️⃣ **Invite users via links** (to assist with game management).
+🔑 **Необхідні дозволи:**
+Щоб працювати належним чином, мені потрібні **права адміністратора** в цій групі\\. Будь ласка, переконайтеся, що я маю наступні дозволи:
+1️⃣ **Закріплювати повідомлення** \\(для оголошень про гру\\)\\.
+2️⃣ **Видаляти повідомлення** \\(щоб прибирати зайвий безлад\\)\\.
+3️⃣ **Запрошувати користувачів через посилання** \\(для управління грою\\)\\.
 
-Without these permissions, I might not be able to run the game smoothly.
+Без цих дозволів я можу не впоратися з грою як слід\\.
 
-~~---~~
+\\~\\~\\-\\-\\~\\~
 
-🎮 **How to Start the Game:**
-- Use the `/{group.play.command}` command to initiate a new game.
-- I'll handle everything, from assigning roles to managing gameplay.
+🎮 **Як розпочати гру:**
+\\- Використовуйте команду `{group.play}`, щоб ініціювати нову гру\\.
+\\- Я подбаю про все: від призначення ролей до управління ігровим процесом\\.
 
-🕹 Ready to play? Grant me admin rights and type `/{group.play.command}` to begin!
+🕹 Готові грати? Надіть мені права адміністратора та введіть команду `{group.play}`, щоб почати\\!
 
-~~---~~
+\\~\\~\\-\\-\\~\\~
 
-Let's get the game rolling and find out who the spy is! 🕵️‍♀️
+Давайте розпочнемо гру та з’ясуємо, хто шпигун\\! 🕵️‍♀️
 """
-)
 
 
-THIS_ROOM_DOESNT_EXISTS = TranslateStr("That room doesn't exists already.")
+THIS_ROOM_DOESNT_EXISTS = "Цієї кімнати вже не існує\\."
 
 
-YOU_JOINED_TO_THE_GAME = TranslateStr("You joined to the [game]({})")
+YOU_JOINED_TO_THE_GAME = "Ви приєдналися до [гри]({})"
 
 
-ASK_QUESTION_MSG = TranslateStr(
+ASK_QUESTION_MSG = (
     """
-*🔄 Next turn in the "Spyfall" game!*
-🔍 *{}*, it’s your turn!
-Ask a question to *{}*.
+*🔄 Наступний хід у грі "Знахідка для шпигуна"\\!*
+🔍 *{}*, твій хід\\!
+Задай запитання *{}*\\.
 
-🎙️ *Example question:*
-_"What are you doing here?"_ or _"What does this place look like?"_
+🎙️ *Приклад запитання:*
+_"Що ти тут робиш\\?"_ або _"Як виглядає це місце\\?"_
 """
-    + f"\nAfter pass the turn to the next player /{group.next.command}"
+    + f"\nПісля цього передай хід наступному гравцю за допомогою команди {group.next}"
 )
 
 
-RESULTS_PREV_ROUND = TranslateStr("Results after {} round:\n")
+RESULTS_PREV_ROUND = "Результати після {} раунду:\n"
 
 
-WINNERS = TranslateStr("Winners of game with max score:\n")
+WINNERS = "Переможці гри з макс\\. кількістью балів:\n"
 
 
-NO_WINNERS = TranslateStr("In game are'nt any winners.")
+NO_WINNERS = r"В грі немає переможців\."
 
 
-ROUND_START_IN = TranslateStr("Round {} will start in {} seconds.")
+ROUND_START_IN = r"Раунд {} розпочнеться за {} сек\."
 
 
-ROOM_NOT_FOUND = TranslateStr("Game room not found.")
+ROOM_NOT_FOUND = r"Ігрова кімната не знайдена\."
 
 
-NOT_ENOUGH_PLAYERS_TO_START = TranslateStr(
-    f"Not enough players to start game. Minimum need {spygame.min_players_in_room} players."
+NOT_ENOUGH_PLAYERS_TO_START = f"Недостатньо гравців щоб розпочати гру\\. Мінімум потрібно {spygame.min_players_in_room} гравці\\."
+
+
+NOT_ENOUGH_TO_DISTRIBUTE = f"Недостатньо гравців для розподілення завдань\\. Повинно бути хочаб {spygame.min_players_in_room} гравці\\."
+
+
+PLAYER_LEFT_GAME = "{} вийшов з гри ⚠️"
+
+
+NO_SPIES_FOR_CONTINUE = r"Немає шпигунів для продовження гри\."
+
+
+CREATOR_LEFT_THE_GAME = r"Творець кімнати вийшов з гри\. Неможливо продовжити\."
+
+
+NOT_ENOUGH_PLAYERS_TO_CONTINUE = f"Недостатньо гравців для продовження гри\\. Повинно бути хочаб {spygame.min_players_in_room} гравці\\."
+
+
+NOT_CORRECT_MENTION_FOR_VOTE = f"Некоректне згадування користувача для голосування за нього\\.\n\nВикористовуйте `{group.vote} @suspected_username`"
+
+YOU_CAN_VOTE_ONLY_FOR_USER_WHICH_IN_GAME = (
+    r"Ви не можете голосувати за гравців, які зараз не беруть участь у грі\."
 )
 
+YOU_CANNOT_VOTE_FOR_YOUR_SELF = "Ви не можете голосувати за себе"
 
-NOT_ENOUGH_TO_DISTRIBUTE = TranslateStr(
-    f"There are not enough players to distribute tasks. There must be at least {spygame.min_players_in_room} players."
+EARLY_VOTE = (
+    r"🗣 {} вважає, що {} є шпигуном 🕵️‍♂️\. Якщо ви згодні, голосуйте нижче 📥"
+    + f"\n\nУ вас є {spygame.early_vote_time} секунд для голосування\\."
 )
 
+SUMMARY_VOTING_MSG = f"""
+Отже, раунд завершено, і вам потрібно проголосувати за гравця, якого ви підозрюєте у шпигунстві\\. У вас є {spygame.summmary_vote_time // 60} хвилин для обговорення та голосування\\.
 
-PLAYER_LEFT_GAME = TranslateStr("{} left the game ⚠️")
-
-
-NO_SPIES_FOR_CONTINUE = TranslateStr("No spies to continue the game.")
-
-
-CREATOR_LEFT_THE_GAME = TranslateStr("Creator of room left the game. Cannot continue.")
-
-
-NOT_ENOUGH_PLAYERS_TO_CONTINUE = TranslateStr(
-    f"Not enough players to continue the game. There must be at least {spygame.min_players_in_room} players."
-)
-
-
-NOT_CORRECT_MENTION_FOR_VOTE = TranslateStr(
-    f"Incorrect user mention for voting for him.\n\nUse `/{group.vote.command} @suspected_username`"
-)
-
-
-YOU_CAN_VOTE_ONLY_FOR_USER_WHICH_IN_GAME = TranslateStr(
-    "You cannot vote for users which currently not in that game."
-)
-
-
-YOU_CANNOT_VOTE_FOR_YOUR_SELF = TranslateStr("You cannot vote for your self")
-
-
-EARLY_VOTE = TranslateStr(
-    "🗣 {} thinks the {} is spy 🕵️‍♂️. If you agree vote below 📥"
-    + f"\n\nYou have {spygame.early_vote_time} seconds to vote."
-)
-
-
-SUMMARY_VOTING_MSG = TranslateStr(
-    f"""
-And so the round has come to an end and you need to vote for the player you think or suspect is a spy, you have {spygame.summmary_vote_time // 60} minutes to discuss among yourselves and vote.
-
-Once you have cast your vote, it will no longer be possible to cancel it! ⚠️
+Після того як ви віддали свій голос, скасувати його буде неможливо\\! ⚠️
 """
+
+VOTE_FOR_SPY = r"Голосуйте за шпигуна 🕵🏻‍♂️\!"
+
+YOU_ARE_NOT_IN_GAME = r"Ви не берете участі у грі\."
+
+SUCCESSFULY_EARLY_VOTING = r"Успішне дострокове голосування\! Гравці виграють цей раунд, і всі, хто проголосував за шпигуна, отримують по одному балу\. Крім того, {} отримує один бонусний бал, оскільки виявив шпигуна\!"
+
+NOT_SUCCESSFULY_EARLY_VOTING = r"Неуспішне дострокове голосування, ви всі проголосували за не шпигуна\. Кожен шпигун, який залишився в грі, отримає два бали\."
+
+CONTINUE_THE_ROUND = r"У грі залишився ще один шпигун, і у вас є час, щоб спробувати знайти його та отримати більше балів за цей раунд\."
+
+YOU_ALREADY_VOTED = "Ви вже проголосували."
+
+YOU_VOTED = "Ви проголосували ✅"
+
+SUSPECTED_CANNOT_VOTE_FOR_SELF = "Підозрюваний гравець не може голосувати за себе 🕵️‍♂️"
+
+REDEFINED_LOCATION_ROLES_MESSAGE = "*⚠️ Локацію та ролі було перевизначено, перевірте свої нові ролі та локації у [чаті]({}) зі мною*"
+
+ANYONE_WASNT_KICKED = r"Ніхто не був виключений із гри\. Якщо підозрюваний у шпигунстві був шпигуном, автор голосування отримує 1 бал\."
+
+ANY_PLAYER_WASNT_KICKED = (
+    r"Жодного гравця не було виключено з гри, ніхто не отримує бали\."
 )
 
+SUCCESSFULLY_SUMMARY_VOTE = r"Ви всі мали рацію, {link} був шпигуном\! Усі гравці, які проголосували за {link}, отримають 1 бал\."
 
-VOTE_FOR_SPY = TranslateStr("Vote for spy! 🕵🏻‍♂️")
-
-
-YOU_ARE_NOT_IN_GAME = TranslateStr("You are not in game.")
-
-
-SUCCESSFULY_EARLY_VOTING = TranslateStr(
-    "Successfully early voting! Players win that round and every who voted per spy player get the one point, also {} get one bonus point beacause he's was detect the spy!"
+UNSUCCESSFULLY_SUMMARY_VOTE = (
+    r"{} не був шпигуном\. Лише шпигуни отримають по два бали кожен у цьому раунді\."
 )
 
-
-NOT_SUCCESSFULY_EARLY_VOTING = TranslateStr(
-    "Unsuccessfully early voting, you all voted for not spy player. Every spy player who still in game will receive two points."
+YOU_CAN_USE_THAT_COMMAND_ONLY_IF_YOU_SPY = (
+    r"Ви можете використовувати цю команду лише якщо ви шпигун\."
 )
 
+WANRING_GUESS_MESSAGE = f"""
+*⚠️ ПОПЕРЕДЖЕННЯ*
 
-CONTINUE_THE_ROUND = TranslateStr(
-    "There is one more spy left in the game and you have time to try to find him and get more points for this round."
-)
+Якщо ви продовжите, усі гравці дізнаються, що ви шпигун 🕵️‍♂️
 
-
-YOU_ALREADY_VOTED = TranslateStr("You already voted")
-
-
-YOU_VOTED = TranslateStr("You voted ✅")
-
-
-SUSPECTED_CANNOT_VOTE_FOR_SELF = TranslateStr(
-    "Suspected player cannot vote for self 🕵️‍♂️"
-)
-
-
-REDEFINED_LOCATION_ROLES_MESSAGE = TranslateStr(
-    "*⚠️ Just was redefine the location and roles, check your new roles and locations in [chat]({}) with me*"
-)
-
-ANYONE_WASNT_KICKED = TranslateStr(
-    "Anyone wasn't excluded from game, if player which was suspected in spy was a spy, author of vote get the 1 point"
-)
-
-
-ANY_PLAYER_WASNT_KICKED = TranslateStr(
-    "Any player wasnt kicked from game, any doesn't get the points."
-)
-
-
-SUCCESSFULLY_SUMMARY_VOTE = TranslateStr(
-    "You all are right, {link} was a spy! All players which voted for the {link} will get 1 point."
-)
-
-
-UNSUCCESSFULLY_SUMMARY_VOTE = TranslateStr(
-    "{} wasnt a spy, only spy players will get the 2 points each in that round."
-)
-
-
-YOU_CAN_USE_THAT_COMMAND_ONLY_IF_YOU_SPY = TranslateStr(
-    "You can use that command only if you spy."
-)
-
-
-WANRING_GUESS_MESSAGE = TranslateStr(
-    f"""
-*⚠️ WARNING*
-
-If you continue all players will know you're spy 🕵️‍♂️
-
-To continue click on button below, you'll have {spygame.guess_location_time // 60} minutes to guess the location or cancel and try later.
+Щоб продовжити, натисніть на кнопку нижче\\. У вас буде {spygame.guess_location_time // 60} хвилин, щоб вгадати локацію або скасувати й спробувати пізніше\\.
 """
-)
 
+CONTINUE = "Продовжити"
 
-CONTINUE = TranslateStr("Continue")
+NOTIFY_USERS_ABOUT_SPY = r"""
+{} був шпигуном\! І, можливо, він зрозумів, яка це була локація\. Тепер він спробує її вгадати\.
 
-
-NOTIFY_USERS_ABOUT_SPY = TranslateStr(
-    """
-{} was a spy! And maybe he understand what location it was, now he'll try to guess her.
-
-If he guess he get 2 points and players will lose that round. If you play with two spies and they know each other, both will get two points if one of then guess the location, in oposite situation all players will get 1 point and we'll go to another round.
+Якщо він вгадає, то отримає 2 бали, а гравці програють цей раунд\. Якщо ви граєте з двома шпигунами, і вони знають один одного, обидва отримають по два бали, якщо один із них вгадає локацію\. У протилежному випадку всі гравці отримають по одному балу, і ми перейдемо до наступного раунду\.
 """
+
+TRY_TO_GUESS = r"Спробуйте вгадати, натисніть на локацію, яка, на вашу думку, використовується зараз у грі\. Якщо ви виберете правильну локацію, отримаєте два бали\. Інакше ви нічого не отримаєте і програєте цей раунд\."
+
+YOU_SUCCESSFULLY_GUESS_LOCATION = r"*Ви вгадали локацію і отримали два бали 🎉\!*"
+
+YOU_UNSUCCESSFULLY_GUESS_LOCATION = (
+    r"Ви не вгадали локацію\. Шпигуни програють цей раунд\."
 )
 
+SUCCESSFULLY_GUESS_LOCATION = r"""
+_{} вгадав локацію {}_ і отримує 2 бали\! Гравці програють цей раунд 👀
 
-TRY_TO_GUESS = TranslateStr(
-    "Try to guess, click on location which you think used now in game, if you pick correct location you get two points in another way you get nothing and lose that round."
-)
-
-
-YOU_SUCCESSFULLY_GUESS_LOCATION = TranslateStr(
-    "*You guessed location and get two points! 🎉*"
-)
-
-
-YOU_UNSUCCESSFULLY_GUESS_LOCATION = TranslateStr(
-    "You're not guessed location. Spies lose that round."
-)
-
-
-SUCCESSFULLY_GUESS_LOCATION = TranslateStr(
-    """
-_{} guessed location {}_, he get 2 points! Players lose that round 👀
-
-__If you use two spies and they know each other second spy too get 2 points.__
+__Якщо ви використовуєте двох шпигунів, і вони знають один одного, другий шпигун також отримує 2 бали\.__
 """
+
+UNSUCCESSFULLY_GUESS_LOCATION = r"{} не вгадав локацію\. Шпигуни програють цей раунд\! Кожен гравець, який не є шпигуном, отримає 1 бал\!"
+
+NOT_GUESS_LOCATION_IN_TIME = r"{} не вгадав локацію вчасно, і шпигуни програють цей раунд\. Кожен гравець, який не є шпигуном, отримає один бал\!"
+
+YOU_DOESNT_GUESS_LOCATION_IN_TIME = (
+    r"Ви не вгадали локацію вчасно і програєте цей раунд\."
 )
 
-
-UNSUCCESSFULLY_GUESS_LOCATION = TranslateStr(
-    "{} doesn't guessed location. Spies lose that round! Every non-spy player will get 1 point!"
-)
-
-
-NOT_GUESS_LOCATION_IN_TIME = TranslateStr(
-    "{} doesn't guessed location in time and spies lose that round, every non-spy player will get one point!"
-)
-
-
-YOU_DOESNT_GUESS_LOCATION_IN_TIME = TranslateStr(
-    "You doesn't guessed location in time and lose that round."
-)
-
-
-CANNOT_CONTINUE_GAME_BECAUSE_BOT_BLOCKED = TranslateStr(
-    "Someone of you blocked me. Cannot continue game, recreate new game with active players."
-)
+CANNOT_CONTINUE_GAME_BECAUSE_BOT_BLOCKED = r"Хтось із вас заблокував мене\. Неможливо продовжити гру, створіть нову гру з активними гравцями\."

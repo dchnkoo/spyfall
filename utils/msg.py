@@ -1,5 +1,7 @@
 from aiogram import types, enums
 
+from functools import partial
+
 import random
 
 
@@ -19,8 +21,10 @@ def extract_message(msg: types.Message | types.CallbackQuery) -> types.Message:
 
 def edit_or_answer(msg: types.Message | types.CallbackQuery):
     if isinstance(msg, types.CallbackQuery):
-        return extract_message(msg).edit_text
-    return extract_message(msg).answer
+        return partial(
+            extract_message(msg).edit_text, parse_mode=enums.ParseMode.MARKDOWN_V2
+        )
+    return partial(extract_message(msg).answer, parse_mode=enums.ParseMode.MARKDOWN_V2)
 
 
 def create_new_query(

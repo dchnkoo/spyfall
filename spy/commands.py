@@ -1,4 +1,11 @@
-from aiogram.client.bot import BotCommand
+from aiogram.utils.markdown import markdown_decoration
+from aiogram.client.bot import BotCommand as _botcommands
+
+
+class BotCommand(_botcommands):
+
+    def __str__(self) -> str:
+        return "/" + markdown_decoration.quote(self.command)
 
 
 class Commands:

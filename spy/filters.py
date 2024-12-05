@@ -45,18 +45,16 @@ class RegisteredUser(filters.Filter):
             await TelegramUser.load_cached(msg.from_user.id)
         except AssertionError:
             if self.send_msg:
-                lang_code = msg.from_user.language_code or "en"
-
                 keyboard = InlineKeyboardBuilder()
                 keyboard.add(
                     types.InlineKeyboardButton(
-                        text=await texts.FIX(lang_code),
+                        text=texts.FIX,
                         url=await create_start_link(bot, payload=""),
                     )
                 )
 
                 await msg.answer(
-                    await texts.YOU_NEED_TO_GO_TO_THE_BOT(lang_code),
+                    texts.YOU_NEED_TO_GO_TO_THE_BOT,
                     reply_markup=keyboard.as_markup(),
                     parse_mode=enums.ParseMode.MARKDOWN_V2,
                 )
@@ -102,15 +100,13 @@ class PlayerFilter(filters.Filter):
         is_current = (
             True
             if not self.is_current
-            else player.id == room.cur_player.id if room.cur_player else False
+            else player == room.cur_player if room.cur_player else False
         )
         is_question_to = (
             True
             if not self.is_question_to
             else (
-                player.id == room.question_to_player
-                if room.question_to_player
-                else False
+                player == room.question_to_player if room.question_to_player else False
             )
         )
         is_spy = True if not self.is_spy else player.is_spy
@@ -132,8 +128,7 @@ class ChatMemberIsAdmin(filters.Filter):
             enums.ChatMemberStatus.CREATOR,
         ):
             if self.answer:
-                lang_code = message.from_user.language_code or "en"
-                await message.reply(await texts.COMMAND_ONLY_FOR_ADMINS(lang_code))
+                await message.reply(texts.COMMAND_ONLY_FOR_ADMINS)
             return False
 
         return True

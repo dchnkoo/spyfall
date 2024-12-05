@@ -37,12 +37,6 @@ async def skip(
     next_step_txt = None
     if (next_state := (index + 1)) <= len(cls.__states__) - 1:
         st: fsm.State = cls.__states__[next_state]
-        state_name = st.state.split(":", 1)[1]
-
-        if state_name == "save":
-            await cls._save(message, state, user)
-            await state.clear()
-            return
 
         await state.set_state(st)
 
@@ -57,11 +51,7 @@ async def skip(
         await state.clear()
         txt = texts.CANCELED_ACTION
 
-    await message.answer(
-        await txt(user.language), parse_mode=enums.ParseMode.MARKDOWN_V2
-    )
+    await message.answer(txt, parse_mode=enums.ParseMode.MARKDOWN_V2)
 
     if next_step_txt is not None:
-        await message.answer(
-            await next_step_txt(user.language), parse_mode=enums.ParseMode.MARKDOWN_V2
-        )
+        await message.answer(next_step_txt, parse_mode=enums.ParseMode.MARKDOWN_V2)

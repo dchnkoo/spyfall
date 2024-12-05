@@ -10,6 +10,7 @@ from aiogram.client.default import Default
 
 import pydantic as _p
 import typing as _t
+import asyncio
 
 
 def save_sended[
@@ -25,6 +26,8 @@ def save_sended[
 
 
 class ChatModel(ABC, _p.BaseModel):
+
+    delay: _t.ClassVar[float] = 0.25
 
     save_msg_id: _t.ClassVar[bool] = False
     _saved_msgs_ids: list[int | str] = _p.PrivateAttr(default_factory=list)
@@ -199,6 +202,7 @@ class ChatModel(ABC, _p.BaseModel):
         **action_kw,
     ) -> types.Message:
         async with self.chat_action(**action_kw):
+            await asyncio.sleep(self.delay)
             return await self.__bot__.send_message(
                 chat_id=self.chat_id,
                 text=text,
@@ -253,6 +257,7 @@ class ChatModel(ABC, _p.BaseModel):
         **action_kw,
     ) -> types.Message:
         async with self.chat_action(ChatAction.UPLOAD_PHOTO, **action_kw):
+            await asyncio.sleep(self.delay)
             return await self.__bot__.send_photo(
                 chat_id=self.chat_id,
                 photo=photo,

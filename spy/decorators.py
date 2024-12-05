@@ -9,7 +9,7 @@ from spy.routers import spybot
 from spy import texts
 
 from aiogram.utils.deep_linking import decode_payload
-from aiogram import types, filters
+from aiogram import types, filters, enums
 
 from functools import wraps
 
@@ -27,7 +27,7 @@ def create_user_or_update(func):
         lang_code = new_user.language_code or "en"
         try:
             assert new_user is not None, AssertionAnswer(
-                texts.SOMETHING_WRONG_TRY_START, translate=lang_code
+                texts.SOMETHING_WRONG_TRY_START
             )
             user = await TelegramUser.add(new_user)
             if not (await user.get_settings()):
@@ -47,14 +47,10 @@ def with_user(func):
     async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kw):
         user = msg.from_user
         lang_code = user.language_code or "en"
-        assert user is not None, AssertionAnswer(
-            texts.SOMETHING_WRONG_TRY_START, translate=lang_code
-        )
+        assert user is not None, AssertionAnswer(texts.SOMETHING_WRONG_TRY_START)
 
         user = await TelegramUser.load(user.id)
-        assert user is not None, AssertionAnswer(
-            texts.SOMETHING_WRONG_TRY_START, translate=lang_code
-        )
+        assert user is not None, AssertionAnswer(texts.SOMETHING_WRONG_TRY_START)
 
         return await func(msg, *args, user=user, **kw)
 
@@ -66,9 +62,7 @@ def with_user_cache(func):
     async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kw):
         from_user = msg.from_user
         lang_code = from_user.language_code or "en"
-        assert from_user is not None, AssertionAnswer(
-            texts.SOMETHING_WRONG_TRY_START, translate=lang_code
-        )
+        assert from_user is not None, AssertionAnswer(texts.SOMETHING_WRONG_TRY_START)
         user_id = from_user.id
         try:
             user = await TelegramUser.load_cached(user_id)
@@ -110,9 +104,7 @@ def with_manager(func: _t.Callable | None = None, *, by_user_id: bool = False):
             if by_user_id:
                 manager = await GameManager.meta.load_by_user_id(chat_id)
                 if manager is None:
-                    await extract_message(msg).answer(
-                        await texts.ROOM_NOT_FOUND(msg.from_user.language_code or "en")
-                    )
+                    await extract_message(msg).answer(texts.ROOM_NOT_FOUND)
                     return
             else:
                 manager = GameManager.meta.get_room(chat_id)
@@ -147,6 +139,8 @@ def error_handler(func):
             await e.handle(manager)
         except Exception as e:
             logger.exception(e)
-            await extract_message(msg).answer(texts.SOMETHING_WRONG_TRY_START)
+            await extract_message(msg).answer(
+                texts.SOMETHING_WRONG_TRY_START, parse_mode=enums.ParseMode.MARKDOWN_V2
+            )
 
     return wrapper

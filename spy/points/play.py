@@ -1,5 +1,4 @@
 from spy.decorators import (
-    create_user_or_update,
     with_user_cache,
     with_manager,
     with_player,
@@ -109,18 +108,14 @@ async def vote_for_spy(msg: types.Message, manager: GameManager, player: Player,
 
         if suspected is None:
             await msg.answer(
-                await texts.YOU_CAN_VOTE_ONLY_FOR_USER_WHICH_IN_GAME(
-                    manager.room.language_code,
-                ),
+                texts.YOU_CAN_VOTE_ONLY_FOR_USER_WHICH_IN_GAME,
                 parse_mode=enums.ParseMode.MARKDOWN_V2,
             )
             return
 
         if suspected == player:
             await msg.answer(
-                await texts.YOU_CANNOT_VOTE_FOR_YOUR_SELF(
-                    manager.room.language_code,
-                ),
+                texts.YOU_CANNOT_VOTE_FOR_YOUR_SELF,
                 parse_mode=enums.ParseMode.MARKDOWN_V2,
             )
             return
@@ -152,7 +147,7 @@ async def early_voting(
 ):
     if player == manager.room.vote.suspected:
         raise CallbackAlert(
-            message=await texts.SUSPECTED_CANNOT_VOTE_FOR_SELF(player.language),
+            message=texts.SUSPECTED_CANNOT_VOTE_FOR_SELF,
             show_alert=True,
         )
 
@@ -162,15 +157,13 @@ async def early_voting(
         vote = manager.room.make_vote(voter=player, vote=False)
 
     if vote is False:
-        raise CallbackAlert(
-            message=await texts.YOU_ALREADY_VOTED(player.language), show_alert=True
-        )
+        raise CallbackAlert(message=texts.YOU_ALREADY_VOTED, show_alert=True)
 
     _, reply_markup = manager.room.vote_message()
     await msg.message.edit_reply_markup(
         msg.inline_message_id, reply_markup=reply_markup
     )
-    raise CallbackAlert(message=await texts.YOU_VOTED(player.language))
+    raise CallbackAlert(message=texts.YOU_VOTED)
 
 
 @group_only_msg_without_state.callback_query(
@@ -188,22 +181,20 @@ async def summary_voting(
 
     if player == suspected:
         raise CallbackAlert(
-            message=await texts.YOU_CANNOT_VOTE_FOR_YOUR_SELF(player.language),
+            message=texts.YOU_CANNOT_VOTE_FOR_YOUR_SELF,
             show_alert=True,
         )
 
     voted = manager.room.make_vote(player, suspected)
 
     if voted is False:
-        raise CallbackAlert(
-            message=await texts.YOU_ALREADY_VOTED(player.language), show_alert=True
-        )
+        raise CallbackAlert(message=texts.YOU_ALREADY_VOTED, show_alert=True)
 
     _, reply_markup = manager.room.vote_message()
     await msg.message.edit_reply_markup(
         msg.inline_message_id, reply_markup=reply_markup
     )
-    raise CallbackAlert(message=await texts.YOU_VOTED(player.language))
+    raise CallbackAlert(message=texts.YOU_VOTED)
 
 
 @group_only_msg_without_state.message(
@@ -226,20 +217,38 @@ async def end_the_game(msg: types.Message, manager: GameManager, **_):
 async def resender(msg: types.Message, manager: GameManager, **_):
     vote = manager.room.vote
     if vote.msg_counter >= spygame.resend_summary_vote_msg_after:
+
         vote.msg_counter = 0
         await manager.room.delete_last_sended_msg()
+
         text, reply_markup = vote.vote_message()
         await manager.room.send_message(
-            text=await text(manager.room.language_code),
+            text=text,
             reply_markup=reply_markup,
         )
         return
+
     vote.msg_counter += 1
+
+
+@group_only_msg_without_state.message(
+    filters.Command(group.next, ignore_case=True),
+    game_filters.GameProccessFilter(GameStatus.playing),
+    game_filters.PlayerFilter(is_current=True),
+)
+@with_manager
+async def puss_turn(msg: types.Message, manager: GameManager, **_):
+    await manager.room.define_game_players()
+    await manager.room.send_ask_question_msg()
 
 
 @group_clear.message(
     game_filters.GameProccessFilter(),
     ~game_filters.GameProccessFilter(GameStatus.summary_vote),
+    ~filters.or_f(
+        game_filters.PlayerFilter(is_current=True),
+        game_filters.PlayerFilter(is_question_to=True),
+    ),
 )
 async def cleaner(msg: types.Message):
     await msg.delete()

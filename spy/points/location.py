@@ -40,7 +40,7 @@ async def add_location(
     await state.update_data(package_id=package_id)
 
     await query.message.edit_text(
-        await texts.ENTER_LOCATION_NAME(user.language),
+        texts.ENTER_LOCATION_NAME,
         parse_mode=enums.ParseMode.MARKDOWN_V2,
     )
 
@@ -61,7 +61,7 @@ async def handle_location_name(
     await state.set_state(fsm.LocationFSM.image_url)
 
     await message.answer(
-        await texts.ENTER_LINK_ON_IMAGE_OR_SKIP(user.language),
+        texts.ENTER_LINK_ON_IMAGE_OR_SKIP,
         parse_mode=enums.ParseMode.MARKDOWN_V2,
     )
 
@@ -79,7 +79,7 @@ async def show_locations(query: types.CallbackQuery, user: "TelegramUser", **_):
     if not locations:
         func = await handle_content_type_text(query)
         msg = await func(
-            await texts.YOU_DOES_NOT_HAVE_LOCATIONS(user.language),
+            texts.YOU_DOES_NOT_HAVE_LOCATIONS,
             parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
 
@@ -103,13 +103,13 @@ async def show_locations(query: types.CallbackQuery, user: "TelegramUser", **_):
     else:
         keyboard.add(
             types.InlineKeyboardButton(
-                text=await texts.BACK(user.language),
+                text=texts.BACK,
                 callback_data=CallbackPrefix.show_package + str(package_id),
             )
         )
         keyboard.adjust(1)
 
-    text = (await texts.INFO_PACKAGE(user.language)).format(
+    text = texts.INFO_PACKAGE.format(
         len(locations),
         package=package,
     )
@@ -132,25 +132,25 @@ async def show_location(query: types.CallbackQuery, user: "TelegramUser", **_):
     keyboard = InlineKeyboardBuilder()
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.DELETE_LOCATION(user.language),
+            text=texts.DELETE_LOCATION,
             callback_data=CallbackPrefix.delete_location + str(location.id),
         )
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.ROLES(user.language),
+            text=texts.ROLES,
             callback_data=CallbackPrefix.show_roles + str(location.id),
         )
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.ADD_ROLE(user.language),
+            text=texts.ADD_ROLE,
             callback_data=CallbackPrefix.add_role + str(location.id),
         )
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.BACK(user.language),
+            text=texts.BACK,
             callback_data=CallbackPrefix.show_locations + str(location.package_id),
         )
     )
@@ -159,7 +159,7 @@ async def show_location(query: types.CallbackQuery, user: "TelegramUser", **_):
 
     roles = await location.number_of_roles()
 
-    txt = (await texts.INFO_LOCATION(user.language)).format(
+    txt = texts.INFO_LOCATION.format(
         roles,
         location=location,
     )

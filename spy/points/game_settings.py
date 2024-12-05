@@ -40,46 +40,44 @@ async def show_the_settings(
     keyboard = InlineKeyboardBuilder()
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.SELECT_GAME_PACKAGE(user.language),
+            text=texts.SELECT_GAME_PACKAGE,
             callback_data=CallbackPrefix.select_game_package,
         )
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.CHOOSE_GAME_LOCATIONS(user.language),
+            text=texts.CHOOSE_GAME_LOCATIONS,
             callback_data=CallbackPrefix.choose_game_locations,
         )
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.CHOOSE_GAME_ROLES(user.language),
+            text=texts.CHOOSE_GAME_ROLES,
             callback_data=CallbackPrefix.select_location_for_roles,
         )
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.CONFIGURE_SPIES(user.language),
+            text=texts.CONFIGURE_SPIES,
             callback_data=CallbackPrefix.configure_spies,
         )
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.CONFIGURE_ROUNDS(user.language),
+            text=texts.CONFIGURE_ROUNDS,
             callback_data=CallbackPrefix.configure_rounds,
         )
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.CLOSE_MENU(user.language),
+            text=texts.CLOSE_MENU,
             callback_data=CallbackPrefix.delete_msg,
         )
     )
     keyboard.adjust(1)
 
     func = edit_or_answer(message)
-    await func(
-        text=await texts.GAME_SETTINGS(user.language), reply_markup=keyboard.as_markup()
-    )
+    await func(text=texts.GAME_SETTINGS, reply_markup=keyboard.as_markup())
 
 
 @private_only_msg_without_state.callback_query(
@@ -92,26 +90,24 @@ async def configure_rounds(query: types.CallbackQuery, user: "TelegramUser", **_
 
     minutes = settings.round_time.seconds // 60
 
-    text = (await texts.ROUNDS_MENU(user.language)).format(
-        round_duration=minutes, rounds=settings.rounds
-    )
+    text = texts.ROUNDS_MENU.format(round_duration=minutes, rounds=settings.rounds)
 
     keyboard = InlineKeyboardBuilder()
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.NUMBER_OF_ROUNDS(user.language),
+            text=texts.NUMBER_OF_ROUNDS,
             callback_data=CallbackPrefix.round_settings,
         )
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.ROUND_TIME(user.language),
+            text=texts.ROUND_TIME,
             callback_data=CallbackPrefix.configure_round_time,
         )
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.BACK(user.language),
+            text=texts.BACK,
             callback_data=CallbackPrefix.game_settings,
         )
     )
@@ -132,7 +128,7 @@ async def configure_round_time(query: types.CallbackQuery, user: "TelegramUser",
     settings = await user.get_settings()
     minutes = settings.round_time.seconds // 60
 
-    text = (await texts.CONFIGURE_ROUND_TIME(user.language)).format(time=minutes)
+    text = texts.CONFIGURE_ROUND_TIME.format(time=minutes)
 
     keyboard = InlineKeyboardBuilder()
     keyboard.add(
@@ -149,7 +145,7 @@ async def configure_round_time(query: types.CallbackQuery, user: "TelegramUser",
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.BACK(user.language),
+            text=texts.BACK,
             callback_data=CallbackPrefix.configure_rounds,
         )
     )
@@ -180,14 +176,13 @@ async def round_time(query: types.CallbackQuery, user: "TelegramUser", **_):
         minutes += 1
 
     if minutes < spygame.min_round_time or minutes > spygame.max_round_time:
-        text = await texts.TIME_ERROR(user.language)
-        raise CallbackAlert(text, show_alert=True)
+        raise CallbackAlert(texts.TIME_ERROR, show_alert=True)
 
     settings.round_time = timedelta(minutes=minutes)
     await settings.save()
 
     await configure_round_time(query)
-    raise CallbackAlert(await texts.TIME_EDITED(user.language))
+    raise CallbackAlert(texts.TIME_EDITED)
 
 
 @private_only_msg_without_state.callback_query(F.data == CallbackPrefix.round_settings)
@@ -197,9 +192,7 @@ async def configure_number_of_rounds(
 ):
     settings = await user.get_settings()
 
-    text = (await texts.CONFIGURE_NUMBER_OF_ROUNDS(user.language)).format(
-        rounds=settings.rounds
-    )
+    text = texts.CONFIGURE_NUMBER_OF_ROUNDS.format(rounds=settings.rounds)
 
     keyboard = InlineKeyboardBuilder()
     keyboard.add(
@@ -216,7 +209,7 @@ async def configure_number_of_rounds(
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.BACK(user.language),
+            text=texts.BACK,
             callback_data=CallbackPrefix.configure_rounds,
         )
     )
@@ -242,14 +235,13 @@ async def round_number(query: types.CallbackQuery, user: "TelegramUser", **_):
         rounds += 1
 
     if rounds < spygame.min_rounds or rounds > spygame.max_rounds:
-        text = await texts.ROUNDS_ERROR(user.language)
-        raise CallbackAlert(text, show_alert=True)
+        raise CallbackAlert(texts.ROUNDS_ERROR, show_alert=True)
 
     settings.rounds = rounds
     await settings.save()
 
     await configure_number_of_rounds(query)
-    raise CallbackAlert(await texts.ROUNDS_EDITED(user.language))
+    raise CallbackAlert(texts.ROUNDS_EDITED)
 
 
 @private_only_msg_without_state.callback_query(
@@ -257,19 +249,7 @@ async def round_number(query: types.CallbackQuery, user: "TelegramUser", **_):
 )
 @with_user_cache
 async def select_game_package(callback: types.CallbackQuery, user: "TelegramUser", **_):
-    packages = await user.get_packages()
-
-    if not packages:
-        new_callback = await callback.message.edit_text(
-            await texts.YOU_DOESNT_HAVE_ANY_PACKAGE(user.language),
-            parse_mode=enums.ParseMode.MARKDOWN_V2,
-        )
-
-        await asyncio.sleep(0.6)
-        await new_callback.edit_text(
-            callback.message.text, reply_markup=callback.message.reply_markup
-        )
-        return
+    packages = await user.get_with_base_package()
 
     settings = await user.get_settings()
     keyboard = InlineKeyboardBuilder()
@@ -285,14 +265,14 @@ async def select_game_package(callback: types.CallbackQuery, user: "TelegramUser
     else:
         keyboard.add(
             types.InlineKeyboardButton(
-                text=await texts.BACK(user.language),
+                text=texts.BACK,
                 callback_data=CallbackPrefix.game_settings,
             )
         )
         keyboard.adjust(1)
 
     await callback.message.edit_text(
-        await texts.CLICK_ON_PACKAGE(user.language),
+        texts.CLICK_ON_PACKAGE,
         reply_markup=keyboard.as_markup(),
         parse_mode=enums.ParseMode.MARKDOWN_V2,
     )
@@ -323,9 +303,7 @@ async def validate_locations(user: "TelegramUser", callback: types.CallbackQuery
 
     if not settings.package_id:
         await callback.message.edit_text(
-            await texts.YOU_NEED_TO_SELECT_PACKAGE_FOR_SELECTING_LOCATIONS(
-                user.language
-            ),
+            texts.YOU_NEED_TO_SELECT_PACKAGE_FOR_SELECTING_LOCATIONS,
             parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
 
@@ -338,7 +316,7 @@ async def validate_locations(user: "TelegramUser", callback: types.CallbackQuery
 
     if not locations:
         await callback.message.edit_text(
-            await texts.YOU_NEED_ADD_LOCATIONS_FOR_PACKAGE_TO_CHOOSE(user.language),
+            texts.YOU_NEED_ADD_LOCATIONS_FOR_PACKAGE_TO_CHOOSE,
             parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
 
@@ -382,14 +360,14 @@ async def choose_game_locations(
     else:
         keyboard.add(
             types.InlineKeyboardButton(
-                text=await texts.BACK(user.language),
+                text=texts.BACK,
                 callback_data=CallbackPrefix.game_settings,
             )
         )
         keyboard.adjust(1)
 
     await callback.message.edit_text(
-        await texts.SELECT_GAME_LOCATIONS(user.language),
+        texts.SELECT_GAME_LOCATIONS,
         reply_markup=keyboard.as_markup(),
         parse_mode=enums.ParseMode.MARKDOWN_V2,
     )
@@ -448,14 +426,14 @@ async def select_location_for_role(
     else:
         keyboard.add(
             types.InlineKeyboardButton(
-                text=await texts.BACK(user.language),
+                text=texts.BACK,
                 callback_data=CallbackPrefix.game_settings,
             )
         )
         keyboard.adjust(1)
 
     await callback.message.edit_text(
-        await texts.SELECT_LOCATION_FOR_ROLE(user.language),
+        texts.SELECT_LOCATION_FOR_ROLE,
         reply_markup=keyboard.as_markup(),
         parse_mode=enums.ParseMode.MARKDOWN_V2,
     )
@@ -475,7 +453,7 @@ async def choose_game_roles(callback: types.CallbackQuery, user: "TelegramUser",
 
     if not roles:
         await callback.message.edit_text(
-            await texts.YOU_NEED_ADD_ROLES_FOR_LOCATION_TO_CHOOSE(user.language),
+            texts.YOU_NEED_ADD_ROLES_FOR_LOCATION_TO_CHOOSE,
             parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
 
@@ -502,7 +480,7 @@ async def choose_game_roles(callback: types.CallbackQuery, user: "TelegramUser",
     else:
         keyboard.add(
             types.InlineKeyboardButton(
-                text=await texts.BACK(user.language),
+                text=texts.BACK,
                 callback_data=CallbackPrefix.select_location_for_roles
                 + str(location_id),
             )
@@ -510,7 +488,7 @@ async def choose_game_roles(callback: types.CallbackQuery, user: "TelegramUser",
         keyboard.adjust(1)
 
     await callback.message.edit_text(
-        await texts.SELECT_GAME_ROLES(user.language),
+        texts.SELECT_GAME_ROLES,
         reply_markup=keyboard.as_markup(),
         parse_mode=enums.ParseMode.MARKDOWN_V2,
     )
@@ -556,28 +534,27 @@ async def configure_spies(callback: types.CallbackQuery, user: "TelegramUser", *
     keyboard = InlineKeyboardBuilder()
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.SET_TWO_SPIES(user.language)
-            + (" ✅" if settings.two_spies else ""),
+            text=texts.SET_TWO_SPIES + (" ✅" if settings.two_spies else ""),
             callback_data=CallbackPrefix.set_two_spies,
         )
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.SPIES_KNOW_EACH_OTHER(user.language)
+            text=texts.SPIES_KNOW_EACH_OTHER
             + (" ✅" if settings.know_each_other else ""),
             callback_data=CallbackPrefix.set_spies_know_each_other,
         )
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.BACK(user.language),
+            text=texts.BACK,
             callback_data=CallbackPrefix.game_settings,
         )
     )
     keyboard.adjust(1)
 
     await callback.message.edit_text(
-        await texts.SPIES_CONFIGURE_EXPLAIN(user.language),
+        texts.SPIES_CONFIGURE_EXPLAIN,
         reply_markup=keyboard.as_markup(),
         parse_mode=enums.ParseMode.MARKDOWN_V2,
     )

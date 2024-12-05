@@ -4,7 +4,6 @@ from .players import Player, PlayersCollection
 
 from .vote import EarlyVote, SummaryVote, Vote
 
-from utils.translate import LanguageCode
 from utils.chat.model import ChatModel
 from utils.exc import game as exc
 
@@ -77,7 +76,6 @@ class GameRoom(ChatModel):
     id: ROOM_ID
     creator: TelegramUser
     game_settings: Settings
-    language_code: LanguageCode
     package: _t.Optional[Package] = None
     location: _t.Optional[Location] = None
     status: GameStatus = GameStatus.recruitment
@@ -197,7 +195,7 @@ class GameRoom(ChatModel):
 
     async def append_player(self, player: TelegramUser):
         if (await Player.load_raw_cached(player.id)) is not None:
-            await player.send_message(await texts.YOU_ALREADY_IN_GAME(player.language))
+            await player.send_message(texts.YOU_ALREADY_IN_GAME)
             raise exc.Exit()
 
         player = self.players.append(player, room_id=self.id)
@@ -207,7 +205,7 @@ class GameRoom(ChatModel):
         await self.append_player(player)
         await self.display_players_in_join_message()
 
-        text = await texts.YOU_JOINED_TO_THE_GAME(player.language)
+        text = texts.YOU_JOINED_TO_THE_GAME
         link = (
             await self.create_chat_invite_link(
                 expire_date=_date.timedelta(seconds=spygame.recruitment_time)
@@ -220,7 +218,7 @@ class GameRoom(ChatModel):
         )
 
     async def send_round_results(self, round: int):
-        text = (await texts.RESULTS_PREV_ROUND(self.language_code)).format(round)
+        text = texts.RESULTS_PREV_ROUND.format(round)
 
         for player in self.players:
             text += "\n\t" + player.mention_markdown() + " \\- " + str(player.score)
@@ -230,25 +228,23 @@ class GameRoom(ChatModel):
     async def send_winners(self):
         winners = self.players.max_score
         if not winners:
-            await self.send_message(text=await texts.NO_WINNERS(self.language_code))
-            await self.send_round_results()
+            await self.send_message(text=texts.NO_WINNERS)
             return
 
-        text = await texts.WINNERS(self.language_code)
+        text = texts.WINNERS
         for player in winners:
             text += "\n\t" + player.mention_markdown() + " \\- " + str(player.score)
         await self.send_message(text=text)
 
     async def notify_about_round(self):
         await self.send_message(
-            (await texts.BEGIN_ROUND(self.language_code)).format(self.current_round),
+            texts.BEGIN_ROUND.format(self.current_round),
         )
 
     async def notify_about_time_to_the_end_of_round(self):
         minutes, seconds = self.time_to_end_of_round_in_minutes_and_seconds
 
-        text = texts.TO_END_OF_ROUND_REMAINS
-        text = (await text(self.language_code)).format(minutes, seconds)
+        text = texts.TO_END_OF_ROUND_REMAINS.format(minutes, seconds)
         await self.send_message(text=text)
 
     async def recruitment_link(self):
@@ -258,7 +254,7 @@ class GameRoom(ChatModel):
         keyboard = InlineKeyboardBuilder()
         keyboard.add(
             types.InlineKeyboardButton(
-                text=await texts.JOIN_TO_THE_GAME(self.language_code),
+                text=texts.JOIN_TO_THE_GAME,
                 url=await self.recruitment_link(),
             )
         )
@@ -268,8 +264,8 @@ class GameRoom(ChatModel):
         join_message_id = self.join_message_id
         assert join_message_id is not None, "Join message not found."
 
-        txt = await texts.RECRUITMENT_MESSAGE(self.language_code)
-        display_players = await texts.DISPLAY_PLAYERS(self.language_code)
+        txt = texts.RECRUITMENT_MESSAGE
+        display_players = texts.DISPLAY_PLAYERS
 
         players = ", ".join(
             [
@@ -298,15 +294,11 @@ class GameRoom(ChatModel):
         first_spy, second_spy = self.players.spies
 
         await first_spy.send_message(
-            (await texts.THE_SECOND_SPY_IS(first_spy.language)).format(
-                player=second_spy
-            ),
+            texts.THE_SECOND_SPY_IS.format(player=second_spy),
         )
 
         await second_spy.send_message(
-            (await texts.THE_SECOND_SPY_IS(second_spy.language)).format(
-                player=first_spy
-            ),
+            texts.THE_SECOND_SPY_IS.format(player=first_spy),
         )
 
     async def choose_game_package(self) -> None:
@@ -316,7 +308,7 @@ class GameRoom(ChatModel):
 
         if package is None:
             await self.send_error_msg_and_finish_game(
-                await texts.YOU_DOESNT_HAVE_ANY_PACKAGE(self.language_code),
+                texts.YOU_DOESNT_HAVE_ANY_PACKAGE,
             )
 
         self.package = package
@@ -327,11 +319,9 @@ class GameRoom(ChatModel):
 
         if not locations:
             await self.send_error_msg_and_finish_game(
-                (
-                    await texts.YOU_DOES_NOT_HAVE_LOCATIONS_IN_THAT_PACKAGE(
-                        self.language_code
-                    )
-                ).format(self.package.escaped_name),
+                texts.YOU_DOES_NOT_HAVE_LOCATIONS_IN_THAT_PACKAGE.format(
+                    self.package.escaped_name
+                ),
             )
 
         if self.game_settings.use_locations_id:
@@ -343,16 +333,15 @@ class GameRoom(ChatModel):
 
             location = random.choice(locations)
         else:
-            location = random.choice(locations)
+            location = await self.package.get_random_location()
+            assert location is not None, "Location cannot be None in that context."
 
         number_of_locations = len(locations)
         if number_of_locations < self.game_settings.rounds:
             await self.send_error_msg_and_finish_game(
-                (
-                    await texts.LOCATIONS_NEED_TO_BE_MORE_THAN_ROUNDS(
-                        self.language_code
-                    )
-                ).format(number_of_locations, self.game_settings.rounds)
+                texts.LOCATIONS_NEED_TO_BE_MORE_THAN_ROUNDS.format(
+                    number_of_locations, self.game_settings.rounds
+                )
             )
 
         self.location = location
@@ -374,9 +363,7 @@ class GameRoom(ChatModel):
 
         if (len(roles) + spies) < number_of_players:
             await self.send_error_msg_and_finish_game(
-                (await texts.ROLES_LESS_THAN_PLAYERS(self.language_code)).format(
-                    self.location.escaped_name
-                )
+                texts.ROLES_LESS_THAN_PLAYERS.format(self.location.escaped_name)
             )
 
         random.shuffle(roles)
@@ -403,7 +390,7 @@ class GameRoom(ChatModel):
             players[player_index].role = roles[roles_index]
 
     async def send_redefine_location_roles_message(self):
-        text = await texts.REDEFINED_LOCATION_ROLES_MESSAGE(self.language_code)
+        text = texts.REDEFINED_LOCATION_ROLES_MESSAGE
         text = text.format(await self.bot_link())
         await self.send_message(text)
 
@@ -416,7 +403,7 @@ class GameRoom(ChatModel):
         await self.unset_players()
         if self.previous_status == GameStatus.recruitment:
             await self.delete_sended_messages()
-        await self.send_message(await texts.GAME_ENDED(self.language_code))
+        await self.send_message(texts.GAME_ENDED)
 
     def set_current_player(self, player: Player) -> None:
         assert player in self.players.in_game, "Player doesn't in game."
@@ -430,12 +417,12 @@ class GameRoom(ChatModel):
         if self.cur_player:
             players.safety_remove(self.cur_player)
 
-    async def define_current_player(self) -> None:
+    def define_current_player(self) -> None:
         players = self.players.in_game
         self.remove_cur_and_question(players)
         self.set_current_player(random.choice(players))
 
-    async def define_question_to_player(self) -> None:
+    def define_question_to_player(self) -> None:
         players = self.players.in_game
         if self.cur_player:
             players.safety_remove(self.cur_player)
@@ -443,30 +430,26 @@ class GameRoom(ChatModel):
 
     async def define_game_players(self) -> None:
         try:
-            await self.define_current_player()
-            await self.define_question_to_player()
+            self.define_current_player()
+            self.define_question_to_player()
         except IndexError:
-            await self.send_message(
-                await texts.NOT_ENOUGH_TO_DISTRIBUTE(self.language_code)
-            )
+            await self.send_message(texts.NOT_ENOUGH_TO_DISTRIBUTE)
             raise exc.GameEnd()
 
     async def send_ask_question_msg(self):
         cur_player_link = self.cur_player.mention_markdown()
         qiestion_to_player_link = self.question_to_player.mention_markdown()
         await self.send_message(
-            (await texts.ASK_QUESTION_MSG(self.language_code)).format(
-                cur_player_link, qiestion_to_player_link
-            ),
+            texts.ASK_QUESTION_MSG.format(cur_player_link, qiestion_to_player_link),
         )
 
     async def redefine_game_players(self, player: Player):
         if player.id == self.cur_player.id:
-            await self.define_current_player()
+            self.define_current_player()
 
         question_player_id = self.question_to_player.id
         if player.id == question_player_id or self.cur_player.id == question_player_id:
-            await self.define_question_to_player()
+            self.define_question_to_player()
 
     async def unset_players(self):
         for player in self.players:
@@ -490,30 +473,24 @@ class GameRoom(ChatModel):
             and len(self.players) < spygame.two_spies_limits_on_players
         ):
             await self.send_error_msg_and_finish_game(
-                await texts.YOU_NEED_MIN_THE_PLAYERS_TO_PLAY_WITH_TWO_SPIES(
-                    self.language_code
-                )
+                texts.YOU_NEED_MIN_THE_PLAYERS_TO_PLAY_WITH_TWO_SPIES
             )
 
     async def check_if_spies_exists(self):
         if not self.players.spies:
-            await self.send_error_msg_and_finish_game(
-                await texts.NO_SPIES_FOR_CONTINUE(self.language_code)
-            )
+            await self.send_error_msg_and_finish_game(texts.NO_SPIES_FOR_CONTINUE)
 
     async def check_if_enough_players(self):
         if len(self.players) < spygame.min_players_in_room:
             await self.send_error_msg_and_finish_game(
-                await texts.NOT_ENOUGH_PLAYERS_TO_CONTINUE(self.language_code)
+                texts.NOT_ENOUGH_PLAYERS_TO_CONTINUE
             )
 
     async def quit(self, player: Player):
         await self.players.quit(player)
         try:
             if player == self.creator:
-                await self.send_error_msg_and_finish_game(
-                    await texts.CREATOR_LEFT_THE_GAME(self.language_code)
-                )
+                await self.send_error_msg_and_finish_game(texts.CREATOR_LEFT_THE_GAME)
             if not self.recruitment:
                 await self.check_room()
         except Exception as e:
@@ -529,13 +506,11 @@ class GameRoom(ChatModel):
         finally:
             if not self.recruitment:
                 await self.only_send_message(
-                    text=(await texts.PLAYER_LEFT_GAME(self.language_code)).format(
-                        player.mention_markdown()
-                    ),
+                    text=texts.PLAYER_LEFT_GAME.format(player.mention_markdown()),
                     parse_mode=enums.ParseMode.MARKDOWN_V2,
                 )
             await player.send_message(
-                await texts.PLAYER_LEFT_GAME.format("You")(self.language_code),
+                texts.PLAYER_LEFT_GAME.format("Ти"),
             )
 
     def vote_message(self):
@@ -597,9 +572,7 @@ class GameRoom(ChatModel):
             self.vote_results() is True and self.vote.suspected.is_spy
         ), "Voting wasn't successful, you cannot send that message"
         await self.send_message(
-            (await texts.SUCCESSFULY_EARLY_VOTING(self.language_code)).format(
-                self.vote.author.mention_markdown()
-            ),
+            texts.SUCCESSFULY_EARLY_VOTING.format(self.vote.author.mention_markdown()),
         )
 
     async def send_unsuccessfully_early_voting_msg(self):
@@ -609,9 +582,7 @@ class GameRoom(ChatModel):
         assert (
             self.vote_results() is True and not self.vote.suspected.is_spy
         ), "Voting wasn't unsuccessful, you cannot send that message"
-        await self.send_message(
-            await texts.NOT_SUCCESSFULY_EARLY_VOTING(self.language_code)
-        )
+        await self.send_message(texts.NOT_SUCCESSFULY_EARLY_VOTING)
 
     @contextmanager
     def with_guess_spy(self, spy: Player):

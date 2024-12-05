@@ -81,17 +81,13 @@ class Player(TelegramUserModel):
 
     @role_check
     async def notify_about_role(self, location: LocationModel):
-        role_text = (await texts.NOTIFY_USER_ABOUT_ROLE(self.language)).format(
-            role=self.role
-        )
+        role_text = texts.NOTIFY_USER_ABOUT_ROLE.format(role=self.role)
 
         if self.role.is_spy:
             await self.send_message(text=role_text)
             return
 
-        location_text = (await texts.NOTIFY_ABOUT_LOCATION(self.language)).format(
-            location=location
-        )
+        location_text = texts.NOTIFY_ABOUT_LOCATION.format(location=location)
 
         text = location_text + "\n\n" + role_text
         if location.image_url is not None:
@@ -158,12 +154,14 @@ class PlayersCollection(BaseCollectionModel[Player]):
 
         max_score_player: Player | None = None
         for player in self:
-            if max_score_player is None or (
-                max_score_player.score < (player.score and player.score > 0)
-            ):
-                max_score_player = player
+            if player.score > 0:
+                if max_score_player is None or (
+                    max_score_player and max_score_player.score < player.score
+                ):
+                    max_score_player = player
         else:
-            players.append(max_score_player)
+            if max_score_player:
+                players.append(max_score_player)
 
         if max_score_player is not None:
             for player in self:

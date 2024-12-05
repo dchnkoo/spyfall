@@ -1,3 +1,4 @@
+from .session import async_session_manager
 from .manager import TableManager
 from .models import *
 from . import bases
@@ -13,6 +14,7 @@ import typing as _t
 import uuid
 
 if _t.TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
     from aiogram.types import User
 
 
@@ -37,8 +39,16 @@ class TelegramUser(
     async def get_packages(self) -> _t.Sequence["Package"]:
         return await self.get_relation(Package, self.package_expression)
 
+    async def get_with_base_package(self) -> _t.Tuple["Package"]:
+        packages = await self.get_packages()
+        base_package = await Package.get_base_package()
+        return tuple([*packages, base_package])
+
     async def get_random_package(self) -> _t.Optional["Package"]:
-        return await self.get_random(Package, self.package_expression)
+        return await self.get_random(
+            Package,
+            _sql.or_(self.package_expression, Package.type == enums.PackageType.BASE),
+        )
 
     async def number_of_packages(self) -> int:
         return await self.count(Package, self.package_expression)
@@ -64,6 +74,14 @@ class Package(
         return await self.get_relation(
             TelegramUser, TelegramUser.id == self.owner_id, one=True
         )
+
+    @classmethod
+    @async_session_manager
+    async def get_base_package(
+        cls, *, session: _t.Union["AsyncSession", None] = None
+    ) -> "Package":
+        query = _sql.select(cls).where(cls.type == enums.PackageType.BASE)
+        return (await session.execute(query)).scalar_one()
 
     async def get_random_location(self) -> _t.Optional["Location"]:
         return await self.get_random(Location, self.location_expression)

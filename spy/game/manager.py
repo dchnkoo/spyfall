@@ -77,9 +77,7 @@ def task_error_handler(func):
             await e.handle(self)
         except Exception as e:
             logger.exception(e)
-            await self.room.only_send_message(
-                text=await texts.SOMETHING_WRONG(self.room.language_code)
-            )
+            await self.room.only_send_message(text=texts.SOMETHING_WRONG)
             await self.finish_game()
 
     return wrapper
@@ -305,13 +303,13 @@ class GameManager(metaclass=GameRoomMeta):
         await self.room.append_player(self.room.creator)
 
         await self.room.send_message(
-            await texts.RECRUITMENT_MESSAGE(self.room.language_code),
+            texts.RECRUITMENT_MESSAGE,
             reply_markup=await self.room.recruitment_join_button(),
         )
         await self.room.display_players_in_join_message()
 
         message = await self.room.send_message(
-            (await texts.RECRUITMENT_WILL_END(self.room.language_code)).format(
+            texts.RECRUITMENT_WILL_END.format(
                 (recruitment_time := spygame.recruitment_time)
             ),
         )
@@ -327,7 +325,7 @@ class GameManager(metaclass=GameRoomMeta):
 
             text = text.replace(i, str(recruitment_time))
 
-            await message.edit_text(text, parse_mode=enums.ParseMode.MARKDOWN_V2)
+            await message.edit_text(text)
 
         await self.room.delete_sended_messages()
         await self.put_task(GameStatus.playing)
@@ -340,7 +338,7 @@ class GameManager(metaclass=GameRoomMeta):
         await self.room.distribute_roles()
         await self.room.define_game_players()
         await self.room.send_message(
-            text=(await texts.GAME_STARTED(self.room.language_code)).format(
+            text=texts.GAME_STARTED.format(
                 (self.room.game_settings.round_time.seconds + 10) // 60,
                 self.room.game_settings.rounds,
             ),
@@ -380,14 +378,10 @@ class GameManager(metaclass=GameRoomMeta):
     @on_status(GameStatus.summary_vote)
     async def summary_voting(self):
         with self.room.create_summary_vote() as vote:
-            await self.room.send_message(
-                await texts.SUMMARY_VOTING_MSG(self.room.language_code)
-            )
+            await self.room.send_message(texts.SUMMARY_VOTING_MSG)
 
             text, reply_markup = vote.vote_message()
-            await self.room.send_message(
-                await text(self.room.language_code), reply_markup=reply_markup
-            )
+            await self.room.send_message(text, reply_markup=reply_markup)
 
             try:
                 await asyncio.sleep(spygame.summmary_vote_time)
@@ -398,20 +392,16 @@ class GameManager(metaclass=GameRoomMeta):
             result = self.room.vote_results()
 
             if result is False:
-                await self.room.send_message(
-                    await texts.ANY_PLAYER_WASNT_KICKED(self.room.language_code)
-                )
+                await self.room.send_message(texts.ANY_PLAYER_WASNT_KICKED)
             else:
                 assert isinstance(
                     result, Player
                 ), "In success case result need to be Player instance."
                 if result.is_spy:
                     await self.room.send_message(
-                        (
-                            await texts.SUCCESSFULLY_SUMMARY_VOTE(
-                                self.room.language_code
-                            )
-                        ).format(link=result.mention_markdown())
+                        texts.SUCCESSFULLY_SUMMARY_VOTE.format(
+                            link=result.mention_markdown()
+                        )
                     )
 
                     for player in (voted := vote.voted):
@@ -419,11 +409,9 @@ class GameManager(metaclass=GameRoomMeta):
                             player.increase_score(1)
                 else:
                     await self.room.send_message(
-                        (
-                            await texts.UNSUCCESSFULLY_SUMMARY_VOTE(
-                                self.room.language_code
-                            )
-                        ).format(result.mention_markdown())
+                        texts.UNSUCCESSFULLY_SUMMARY_VOTE.format(
+                            result.mention_markdown()
+                        )
                     )
                     self.room.players.in_game.spies.increase_score(2)
 
@@ -433,7 +421,7 @@ class GameManager(metaclass=GameRoomMeta):
         vote = self.room.vote
 
         msg = await self.room.send_message(
-            text=(await message(self.room.language_code)).format(
+            text=message.format(
                 vote.author.mention_markdown(), vote.suspected.mention_markdown()
             ),
             reply_markup=reply_murkup,
@@ -463,16 +451,12 @@ class GameManager(metaclass=GameRoomMeta):
 
                 await vote.suspected.set_stauts("kicked")
             else:
-                await self.room.send_message(
-                    await texts.ANYONE_WASNT_KICKED(self.room.language_code)
-                )
+                await self.room.send_message(texts.ANYONE_WASNT_KICKED)
 
             if vote.suspected.is_spy and len(self.room.players.in_game.spies) > 0:
                 minutes, _ = self.room.time_to_end_of_round_in_minutes_and_seconds
                 if minutes > 1:
-                    await self.room.send_message(
-                        await texts.CONTINUE_THE_ROUND(self.room.language_code)
-                    )
+                    await self.room.send_message(texts.CONTINUE_THE_ROUND)
                     await self.room.notify_about_time_to_the_end_of_round()
                     return
             await self.go_to_next_round()
@@ -485,9 +469,7 @@ class GameManager(metaclass=GameRoomMeta):
         with self.room.with_guess_spy(player):
             self.room.set_status(GameStatus.guess_location)
             await self.room.send_message(
-                (await texts.NOTIFY_USERS_ABOUT_SPY(self.room.language_code)).format(
-                    player.mention_markdown()
-                )
+                texts.NOTIFY_USERS_ABOUT_SPY.format(player.mention_markdown())
             )
 
             locations = await self.room.package.get_locations()
@@ -503,7 +485,7 @@ class GameManager(metaclass=GameRoomMeta):
 
             try:
                 await msg.message.edit_text(
-                    text=await texts.TRY_TO_GUESS(player.language),
+                    text=texts.TRY_TO_GUESS,
                     reply_markup=keyboard.as_markup(),
                     parse_mode=enums.ParseMode.MARKDOWN_V2,
                 )
@@ -514,13 +496,9 @@ class GameManager(metaclass=GameRoomMeta):
 
             self.room.players.in_game.ordinary.increase_score(1)
             await self.room.send_message(
-                (
-                    await texts.NOT_GUESS_LOCATION_IN_TIME(self.room.language_code)
-                ).format(player.mention_markdown())
+                texts.NOT_GUESS_LOCATION_IN_TIME.format(player.mention_markdown())
             )
-            await player.send_message(
-                await texts.YOU_DOESNT_GUESS_LOCATION_IN_TIME(player.language)
-            )
+            await player.send_message(texts.YOU_DOESNT_GUESS_LOCATION_IN_TIME)
             await self.go_to_next_round()
 
     async def finish_game(self):

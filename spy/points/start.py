@@ -26,26 +26,26 @@ async def start_command(msg: types.Message, bot: Bot, user: "TelegramUser", **_)
     keyboard = InlineKeyboardBuilder()
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.ADD_ME_TO_GROUP(user.language),
+            text=texts.ADD_ME_TO_GROUP,
             url=link,
         )
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.SHOW_PACKAGES(user.language),
+            text=texts.SHOW_PACKAGES,
             callback_data=CallbackPrefix.show_packages,
         )
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.GAME_SETTINGS(user.language),
+            text=texts.GAME_SETTINGS,
             callback_data=CallbackPrefix.game_settings,
         )
     )
     keyboard.adjust(1, 2)
 
     await user.send_message(
-        (await texts.START_MSG(user.language)).format(user=user),
+        texts.START_MSG.format(user=user),
         reply_markup=keyboard.as_markup(),
     )
 
@@ -68,7 +68,7 @@ async def join_to_the_game(
     )
 
     if manager is None:
-        await user.send_message(await texts.ROOM_NOT_FOUND(user.language))
+        await user.send_message(texts.ROOM_NOT_FOUND)
         return
 
     try:

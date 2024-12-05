@@ -42,7 +42,7 @@ async def add_role(
 
     func = await handle_content_type_text(query)
     await func(
-        await texts.ENTER_ROLE_NAME(user.language),
+        texts.ENTER_ROLE_NAME,
         parse_mode=enums.ParseMode.MARKDOWN_V2,
     )
 
@@ -63,7 +63,7 @@ async def handle_location_name(
     await state.update_data(name=message.text)
     await state.set_state(fsm.RoleFSM.description)
 
-    await user.send_message(await texts.ENTER_ROLE_DESCRIPTION(user.language))
+    await user.send_message(texts.ENTER_ROLE_DESCRIPTION)
 
 
 @private_only_msg_without_state.callback_query(
@@ -79,7 +79,7 @@ async def show_roles(query: types.CallbackQuery, user: "TelegramUser", **_):
     if not roles:
         func = await handle_content_type_text(query)
         msg = await func(
-            await texts.YOU_DOESNT_HAVE_ANY_ROLES(user.language),
+            texts.YOU_DOESNT_HAVE_ANY_ROLES,
             parse_mode=enums.ParseMode.MARKDOWN_V2,
         )
 
@@ -102,7 +102,7 @@ async def show_roles(query: types.CallbackQuery, user: "TelegramUser", **_):
     else:
         keyboard.add(
             types.InlineKeyboardButton(
-                text=await texts.BACK(user.language),
+                text=texts.BACK,
                 callback_data=CallbackPrefix.show_location + str(location_id),
             )
         )
@@ -113,7 +113,7 @@ async def show_roles(query: types.CallbackQuery, user: "TelegramUser", **_):
     else:
         keyboard.adjust(1)
 
-    text = (await texts.ROLES_INFO(user.language)).format(
+    text = texts.ROLES_INFO.format(
         len(roles),
         location=location,
     )
@@ -137,19 +137,19 @@ async def show_role(query: types.CallbackQuery, user: "TelegramUser", **_):
     keyboard = InlineKeyboardBuilder()
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.DELETE_ROLE(user.language),
+            text=texts.DELETE_ROLE,
             callback_data=CallbackPrefix.delete_role + str(role.id),
         )
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.BACK(user.language),
+            text=texts.BACK,
             callback_data=CallbackPrefix.show_roles + str(role.location_id),
         )
     )
     keyboard.adjust(1)
 
-    text = (await texts.ROLE_INFO(user.language)).format(role=role)
+    text = texts.ROLE_INFO.format(role=role)
 
     func = await handle_content_type_text(query)
     await func(

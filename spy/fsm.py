@@ -60,18 +60,14 @@ class LocationFSM(UpgradedStatesGroup):
 
         try:
             location = LocationModel(**data)
-        except ValidationError:
-            await user.send_message(
-                await texts.YOU_PROVIDED_NOT_VALID_IMAGE(user.language)
-            )
+            if location.image_url is not None:
+                validate_image = await location.check_if_image_valid(location.image_url)
+                if validate_image is False:
+                    raise ValueError()
+        except (ValidationError, ValueError):
+            await user.send_message(texts.YOU_PROVIDED_NOT_VALID_IMAGE)
+            await state.update_data(image_url=None)
             return
-
-        if location.image_url is not None:
-            if not (await location.check_if_image_valid(location.image_url)):
-                await user.send_message(
-                    await texts.YOU_PROVIDED_NOT_VALID_IMAGE(user.language)
-                )
-                return
 
         locations = await package.get_locations()
 
@@ -85,7 +81,7 @@ class LocationFSM(UpgradedStatesGroup):
                 len(locations) != spygame.locations_limit
             ), texts.FAILED_TO_ADD_LOCATION_LIMIT
         except AssertionError as e:
-            msg = await user.send_message(await e.args[0](user.language))
+            msg = await user.send_message(e.args[0])
             await state.clear()
 
             await asyncio.sleep(0.6)
@@ -95,9 +91,7 @@ class LocationFSM(UpgradedStatesGroup):
         await Location.add(location, package_id=package_id)
 
         await state.clear()
-        msg = await user.send_message(
-            await texts.LOCATION_ADDED_SECCESSFULLY(user.language)
-        )
+        msg = await user.send_message(texts.LOCATION_ADDED_SECCESSFULLY)
 
         query = create_query(msg)
         return query
@@ -124,9 +118,8 @@ class RoleFSM(UpgradedStatesGroup):
         try:
             role = RoleModel(**data)
         except ValidationError:
-            await user.send_message(
-                await texts.DESCRIPTION_VALIDATION_ERROR(user.language)
-            )
+            await user.send_message(texts.DESCRIPTION_VALIDATION_ERROR)
+            await state.update_data(description=None)
             return
 
         roles = await location.get_roles()
@@ -139,7 +132,7 @@ class RoleFSM(UpgradedStatesGroup):
             assert role not in set(roles), texts.FAILED_TO_ADD_ROLE_EXISTS
             assert len(roles) != spygame.roles_limit, texts.FAILED_TO_ADD_ROLE_LIMIT
         except AssertionError as e:
-            msg = await user.send_message(await e.args[0](user.language))
+            msg = await user.send_message(e.args[0])
             await state.clear()
 
             await asyncio.sleep(0.6)
@@ -149,7 +142,7 @@ class RoleFSM(UpgradedStatesGroup):
         await Role.add(role, location_id=location_id)
 
         await state.clear()
-        msg = await user.send_message(await texts.ROLE_ADDED(user.language))
+        msg = await user.send_message(texts.ROLE_ADDED)
 
         query = create_query(msg)
         return query

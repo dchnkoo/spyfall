@@ -1,7 +1,7 @@
 from utils.msg import extract_message
 from abc import ABC, abstractmethod
 
-from aiogram import types
+from aiogram import types, enums
 import typing as _t
 
 if _t.TYPE_CHECKING:
@@ -33,15 +33,16 @@ class Assertion(ABC):
 
 class AssertionAnswer(Assertion):
 
-    def __init__(self, msg: "TranslateStr", *args, translate: str = "en", **kw) -> None:
+    def __init__(self, msg: "TranslateStr", *args, **kw) -> None:
         self.msg = msg
-        self.translate = translate
         self.args = args
         self.kw = kw
 
     async def send(self, msg: types.Message | types.CallbackQuery, *args, **kwargs):
-        to_send = (await self.msg(self.translate)).format(*self.args, **self.kw)
-        await extract_message(msg).answer(to_send)
+        to_send = self.msg.format(*self.args, **self.kw)
+        await extract_message(msg).answer(
+            to_send, parse_mode=enums.ParseMode.MARKDOWN_V2
+        )
 
     def __str__(self) -> str:
         return self.msg

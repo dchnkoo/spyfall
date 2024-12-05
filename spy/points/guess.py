@@ -1,16 +1,15 @@
+from spy.game import GameStatus, Player, GameManager, exc
 from spy.routers import private_only_msg_without_state
-from spy.game import GameStatus, Player, GameManager
 from spy.decorators import with_player, with_manager
 from spy import filters as game_filters, texts
 from spy.callback import CallbackPrefix
 from spy.commands import private
 
-from settings import spygame
+from loguru import logger
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram import types, filters, F
 
-import asyncio
 import uuid
 
 
@@ -24,20 +23,20 @@ async def start_guess(msg: types.Message, player: Player, **_):
     keyboard = InlineKeyboardBuilder()
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.CONTINUE(player.language),
+            text=texts.CONTINUE,
             callback_data=CallbackPrefix.continue_guess,
         )
     )
     keyboard.add(
         types.InlineKeyboardButton(
-            text=await texts.CANCEL(player.language),
+            text=texts.CANCEL,
             callback_data=CallbackPrefix.delete_msg,
         )
     )
     keyboard.adjust(2)
 
     await player.send_message(
-        text=await texts.WANRING_GUESS_MESSAGE(player.language),
+        text=texts.WANRING_GUESS_MESSAGE,
         reply_markup=keyboard.as_markup(),
     )
 
@@ -66,31 +65,29 @@ async def guess_location(
 async def guess_proccess(msg: types.CallbackQuery, manager: GameManager, **_):
     manager.tasks.cancel_current_task()
     guess_location_id = uuid.UUID(msg.data.removeprefix(CallbackPrefix.guess_location))
-
-    player = manager.room.guess_spy_player
-    if manager.room.location.id == guess_location_id:
-        settings = manager.room.game_settings
-        if settings.two_spies and settings.know_each_other:
-            manager.room.players.in_game.spies.increase_score(2)
+    try:
+        player = manager.room.guess_spy_player
+        if manager.room.location.id == guess_location_id:
+            settings = manager.room.game_settings
+            if settings.two_spies and settings.know_each_other:
+                manager.room.players.in_game.spies.increase_score(2)
+            else:
+                player.increase_score(2)
+            await manager.room.send_message(
+                texts.SUCCESSFULLY_GUESS_LOCATION.format(
+                    player.mention_markdown(), manager.room.location.escaped_name
+                )
+            )
+            await player.send_message(texts.YOU_SUCCESSFULLY_GUESS_LOCATION)
         else:
-            player.increase_score(2)
-        await manager.room.send_message(
-            (
-                await texts.SUCCESSFULLY_GUESS_LOCATION(manager.room.language_code)
-            ).format(player.mention_markdown(), manager.room.location.escaped_name)
-        )
-        await player.send_message(
-            await texts.YOU_SUCCESSFULLY_GUESS_LOCATION(player.language)
-        )
-    else:
-        manager.room.players.in_game.ordinary.increase_score(1)
-        await manager.room.send_message(
-            (
-                await texts.UNSUCCESSFULLY_GUESS_LOCATION(manager.room.language_code)
-            ).format(player.mention_markdown())
-        )
-        await player.send_message(
-            await texts.YOU_UNSUCCESSFULLY_GUESS_LOCATION(player.language)
-        )
+            manager.room.players.in_game.ordinary.increase_score(1)
+            await manager.room.send_message(
+                texts.UNSUCCESSFULLY_GUESS_LOCATION.format(player.mention_markdown())
+            )
+            await player.send_message(texts.YOU_UNSUCCESSFULLY_GUESS_LOCATION)
 
-    await manager.go_to_next_round()
+        await manager.go_to_next_round()
+    except Exception as e:
+        logger.exception(e)
+        await manager.room.send_message(texts.SOMETHING_WRONG)
+        raise exc.GameExceptionWrapper(manager, exc.GameEnd())

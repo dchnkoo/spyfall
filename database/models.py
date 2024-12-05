@@ -180,12 +180,12 @@ class LocationModel(BaseModel, bases.Name, bases.PrimaryKey):
 
         async with async_request_session() as client:
             res = await client.get(url)
-            if res.status_code != 200:
-                return False
+            if res.status_code not in range(100, 400):
+                raise ValueError("Not valid image.")
 
         content_type: str = res.headers.get("content-type", None)
         if content_type is None:
-            return False
+            raise ValueError("Not valid image.")
         return content_type.startswith("image")
 
     def __eq__(self, other: "LocationModel") -> bool:
@@ -226,8 +226,8 @@ class RoleModel(BaseModel, bases.Name, bases.PrimaryKey):
     @staticmethod
     def get_spy_role():
         role = RoleModel(
-            name="Spy",
-            description="You are a spy! Your goal is to guess the location.",
+            name="Шпигун",
+            description="Ти шпигун! Твоя ціль дізнатися локацію.",
         )
         role.is_spy = True
         return role
