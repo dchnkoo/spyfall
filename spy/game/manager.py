@@ -332,7 +332,7 @@ class GameManager(metaclass=GameRoomMeta):
 
     @on_status(GameStatus.playing)
     async def play(self):
-        # await self.room.check_if_enough_players()
+        await self.room.check_if_enough_players()
         await self.room.choose_game_package()
         await self.room.choose_game_location()
         await self.room.distribute_roles()
