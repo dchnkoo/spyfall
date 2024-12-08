@@ -123,7 +123,7 @@ async def vote_for_spy(msg: types.Message, manager: GameManager, player: Player,
         async with manager.block_game_proccess():
             with manager.room.create_early_vote(author=player, suspected=suspected):
                 await manager.put_task(GameStatus.voting)
-                await manager.tasks.wait_until_current_task_complete()
+                await manager.tasks.wait_until_complete_current_task()
     finally:
         await msg.delete()
 
@@ -244,10 +244,19 @@ async def puss_turn(msg: types.Message, manager: GameManager, **_):
 
 @group_clear.message(
     game_filters.GameProccessFilter(),
-    ~game_filters.GameProccessFilter(GameStatus.summary_vote),
     ~filters.or_f(
-        game_filters.PlayerFilter(is_current=True),
-        game_filters.PlayerFilter(is_question_to=True),
+        filters.and_f(
+            game_filters.GameProccessFilter(GameStatus.playing),
+            filters.or_f(
+                game_filters.PlayerFilter(is_current=True),
+                game_filters.PlayerFilter(is_question_to=True),
+            ),
+            ~F.text.startswith("/"),
+        ),
+        filters.and_f(
+            game_filters.GameProccessFilter(GameStatus.summary_vote),
+            ~F.text.startswith("/"),
+        ),
     ),
 )
 async def cleaner(msg: types.Message):

@@ -4,7 +4,9 @@ from contextlib import asynccontextmanager
 
 from .players import Player
 
-from functools import wraps, partial
+from .tasks import Tasks
+
+from functools import wraps
 
 from utils.exc import game as exc
 
@@ -13,7 +15,6 @@ from settings import spygame
 from loguru import logger
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.exceptions import TelegramForbiddenError
 from aiogram import enums, types
 
 from spy.callback import CallbackPrefix
@@ -91,22 +92,7 @@ def on_status(s: GameStatus):
     return decorator
 
 
-class TasksHistory(list[asyncio.Task]):
-
-    @property
-    def current_task(self):
-        if len(self) > 0:
-            return self[-1]
-
-    @current_task.setter
-    def current_task(self, value: asyncio.Task):
-        assert isinstance(value, asyncio.Task)
-        self.insert(len(self), value)
-
-    @property
-    def previous_task(self):
-        if len(self) > 1:
-            return self[-2]
+class TasksHistory(Tasks):
 
     @property
     def task_handler(self):
@@ -132,64 +118,10 @@ class TasksHistory(list[asyncio.Task]):
     def guess_location(self):
         return self.get_task(GameStatus.guess_location)
 
-    def get_task(self, name: str):
-        for task in self[::-1]:
-            if task.get_name() == name:
-                return task
-
-    def _exists(self, name: str):
-        for t in self:
-            if t.get_name() == name:
-                if t.done() is True:
-                    self.remove(t)
-                elif t.cancelled() is False or t.cancelling() < 1:
-                    return self.index(t)
-        return False
-
-    def append(self, task: asyncio.Task) -> None:
-        name = task.get_name()
-        if self._exists(name) is not False:
-            raise ValueError("You cannot add the same and not canceled task.")
-        super(TasksHistory, self).append(task)
-
-    def insert(self, index: _t.SupportsIndex, object: asyncio.Task) -> None:
-        if (indx := self._exists(object.get_name())) is not False:
-            del self[indx]
-        super(TasksHistory, self).insert(index, object)
-
-    def clear(self) -> None:
-        for task in self:
-            if task.cancelling() < 1 and task.cancelled() is False:
-                task.cancel()
-        super(TasksHistory, self).clear()
-
-    def create_task(
-        self,
-        manager: "GameManager",
-        task: _t.Callable[["GameManager"], _t.Coroutine],
-        *func_args,
-        name: str,
-        **func_kwds,
-    ):
-        if (t := self.get_task(name)) is not None:
-            if t.done() is False:
-                raise ValueError("Task already exist")
-        created = asyncio.create_task(
-            task_error_handler(task)(manager, *func_args, **func_kwds), name=name
+    def create_task(self, coro, name, *args, context=None, **kw):
+        return super(TasksHistory, self).create_task(
+            task_error_handler(coro), name, *args, context=context, **kw
         )
-        self.append(created)
-        return created
-
-    def copy(self):
-        return self.__class__([i for i in self])
-
-    async def wait_until_current_task_complete(self):
-        if (task := self.current_task) is not None:
-            return await task
-
-    def cancel_current_task(self):
-        if (task := self.current_task) is not None:
-            task.cancel()
 
 
 class GameManager(metaclass=GameRoomMeta):
@@ -203,7 +135,7 @@ class GameManager(metaclass=GameRoomMeta):
         self.queue = asyncio.Queue()
         self.tasks = TasksHistory()
         self.task_handler = self.create_task(
-            GameManager.queue_handler, name="task_handler"
+            GameManager.queue_handler, "task_handler", self
         )
 
         self._game_blocked = False
@@ -256,7 +188,7 @@ class GameManager(metaclass=GameRoomMeta):
         ), "Use block_game_proccess context manager."
         self.room.set_status(s)
         task = self.get_status_handler(status=s)
-        new_task = self.create_task(task, *func_args, name=s, **func_kwds)
+        new_task = self.create_task(task, s, self, *func_args, **func_kwds)
         return new_task
 
     @property
@@ -274,7 +206,7 @@ class GameManager(metaclass=GameRoomMeta):
 
     @property
     def create_task(self):
-        return partial(self.tasks.create_task, self)
+        return self.tasks.create_task
 
     async def put_task(self, event: GameStatus, *func_args, **func_kwds):
         await self.queue.put([event, func_args, func_kwds])
@@ -362,7 +294,7 @@ class GameManager(metaclass=GameRoomMeta):
                 if not locked:
                     async with self.block_game_proccess():
                         await self.put_task(GameStatus.summary_vote)
-                        await self.tasks.wait_until_current_task_complete()
+                        await self.tasks.wait_until_complete_current_task()
                 del locked
 
             async with self.condition:
@@ -526,7 +458,4 @@ class GameManager(metaclass=GameRoomMeta):
             yield
             self.game_blocked = False
             self.condition.notify_all()
-        if not (game_task := self.tasks.play):
-            raise exc.Exit()
-        self.tasks.current_task = game_task
         self.room.set_status(GameStatus.playing)

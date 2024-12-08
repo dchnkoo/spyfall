@@ -27,7 +27,7 @@ def save_sended[
 
 class ChatModel(ABC, _p.BaseModel):
 
-    delay: _t.ClassVar[float] = 0.25
+    delay: _t.ClassVar[float] = 0.15
 
     save_msg_id: _t.ClassVar[bool] = False
     _saved_msgs_ids: list[int | str] = _p.PrivateAttr(default_factory=list)

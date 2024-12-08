@@ -32,7 +32,7 @@ class PrivateCommands(Commands):
     leave = BotCommand(command="leave", description="Leave from game 🚪")
     rules = BotCommand(command="rules", description="SpyGame rules 📖")
     help = BotCommand(
-        command="help", description="See all commands and waht they do 🌚"
+        command="help", description="See all commands and what they do 🌚"
     )
     skip = BotCommand(command="skip", description="Skip action.")
     cancel = BotCommand(command="cancel", description="Cancel action.")

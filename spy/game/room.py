@@ -410,7 +410,7 @@ class GameRoom(ChatModel):
         self.previous_player = self.cur_player
         self.cur_player = player
 
-    def remove_cur_and_question(self, players: PlayersCollection):
+    def remove_cur_and_previous(self, players: PlayersCollection):
         if self.previous_player:
             players.safety_remove(self.previous_player)
 
@@ -419,13 +419,15 @@ class GameRoom(ChatModel):
 
     def define_current_player(self) -> None:
         players = self.players.in_game
-        self.remove_cur_and_question(players)
+        self.remove_cur_and_previous(players)
         self.set_current_player(random.choice(players))
 
     def define_question_to_player(self) -> None:
         players = self.players.in_game
         if self.cur_player:
             players.safety_remove(self.cur_player)
+        if self.question_to_player:
+            players.safety_remove(self.question_to_player)
         self.question_to_player = random.choice(players)
 
     async def define_game_players(self) -> None:

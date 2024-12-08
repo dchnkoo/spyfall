@@ -53,7 +53,7 @@ async def guess_location(
 ):
     async with manager.block_game_proccess():
         await manager.put_task(GameStatus.guess_location, msg, player)
-        await manager.tasks.wait_until_current_task_complete()
+        await manager.tasks.wait_until_complete_current_task()
 
 
 @private_only_msg_without_state.callback_query(
