@@ -24,7 +24,6 @@ def create_user_or_update(func):
     @wraps(func)
     async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kwargs):
         new_user = msg.from_user
-        lang_code = new_user.language_code or "en"
         try:
             assert new_user is not None, AssertionAnswer(
                 texts.SOMETHING_WRONG_TRY_START
@@ -46,7 +45,6 @@ def with_user(func):
     @wraps(func)
     async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kw):
         user = msg.from_user
-        lang_code = user.language_code or "en"
         assert user is not None, AssertionAnswer(texts.SOMETHING_WRONG_TRY_START)
 
         user = await TelegramUser.load(user.id)
@@ -61,7 +59,6 @@ def with_user_cache(func):
     @wraps(func)
     async def wrapper(msg: types.Message | types.CallbackQuery, *args, **kw):
         from_user = msg.from_user
-        lang_code = from_user.language_code or "en"
         assert from_user is not None, AssertionAnswer(texts.SOMETHING_WRONG_TRY_START)
         user_id = from_user.id
         try:

@@ -1,6 +1,7 @@
 from database import (
     async_session_manager,
     PackageScope,
+    TelegramUser,
     PackageType,
     Location,
     Package,
@@ -35,6 +36,8 @@ async def upload_base_locations(*, session: "AsyncSession"):
         return
 
     me = await spybot.get_me()
+    bot_model = TelegramUser.model_validate(me)
+    await bot_model.save()
 
     package = Package(
         name=BASE_PACKAGE_NAME,
