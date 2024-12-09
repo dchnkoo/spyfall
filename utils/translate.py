@@ -315,12 +315,7 @@ def process_markdown(text):
     return "".join(parts)
 
 
-t = Translator(
-    proxies={
-        "https": "https://lylleryals11:TIK4VQW-XZLONCK-HEG505N-9SFJNES-RRUNCNP-3R9PFAG-PXGJBRH@usa.rotating.proxyrack.net:9000",
-        "http": "http://lylleryals11:TIK4VQW-XZLONCK-HEG505N-9SFJNES-RRUNCNP-3R9PFAG-PXGJBRH@usa.rotating.proxyrack.net:9000",
-    }
-)
+t = Translator()
 
 
 class TranslateStr(str):
