@@ -127,6 +127,17 @@ class TasksHistory(Tasks):
 class GameManager(metaclass=GameRoomMeta):
 
     meta = GameRoomMeta
+    __slots__ = (
+        "_status_handlers",
+        "_game_blocked",
+        "task_handler",
+        "round_event",
+        "condition",
+        "rounds",
+        "queue",
+        "tasks",
+        "room",
+    )
 
     def __init__(self, room: GameRoom) -> None:
         global EVENT_HANDLERS
